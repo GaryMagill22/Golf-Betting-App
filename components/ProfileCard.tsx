@@ -103,79 +103,80 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
 
 
     return (
-        <View style={styles.container}>
-            <Card style={styles.card}>
-                <Avatar.Image style={styles.AvatarImage} size={80} source={require('../assets/images/avatar-circle.png')} />
-                <Card.Title title={currentUser?.displayName || 'Unknown Username'} titleStyle={styles.cardTitle}
-                />
-                <Text style={styles.profileText}>{currentUser?.email || 'Unknown Email'}</Text>
-                <Text style={styles.profileText}>Handicap: {handicap}</Text>
-                <Card.Content style={styles.cardContent}>
-                    {isEditing ? (
-                        <ScrollView style={styles.scrollView}>
-                            <TextInput
-                                label="First Name"
-                                value={firstName}
-                                onChangeText={setFirstName}
-                            // placeholder="First Name"
-                            />
-                            <TextInput
-                                label="Last Name"
-                                value={lastName}
-                                onChangeText={setLastName}
-                            // placeholder="Last Name"
-                            />
-                            <TextInput
-                                label="Username"
-                                value={username}
-                                onChangeText={setUsername}
-                            // placeholder="Username"
-                            />
-                            <TextInput
-                                label="Handicap"
-                                value={handicap.toString()}
-                                onChangeText={(text) => setHandicap(Number(text))}
+        <ScrollView>
+            <View style={styles.container}>
+                <Card style={styles.card}>
+                    <Avatar.Image style={styles.AvatarImage} size={80} source={require('../assets/images/avatar-circle.png')} />
+                    <Card.Title title={currentUser?.displayName || 'Unknown Username'} titleStyle={styles.cardTitle}
+                    />
+                    <Text style={styles.profileText}>{currentUser?.email || 'Unknown Email'}</Text>
+                    <Text style={styles.profileText}>Handicap: {handicap}</Text>
+                    <Card.Content style={styles.cardContent}>
+                        {isEditing ? (
+                            <ScrollView style={styles.scrollView}>
+                                <TextInput
+                                    label="First Name"
+                                    value={firstName}
+                                    onChangeText={setFirstName}
+                                // placeholder="First Name"
+                                />
+                                <TextInput
+                                    label="Last Name"
+                                    value={lastName}
+                                    onChangeText={setLastName}
+                                // placeholder="Last Name"
+                                />
+                                <TextInput
+                                    label="Username"
+                                    value={username}
+                                    onChangeText={setUsername}
+                                // placeholder="Username"
+                                />
+                                <TextInput
+                                    label="Handicap"
+                                    value={handicap.toString()}
+                                    onChangeText={(text) => setHandicap(Number(text))}
+                                    // placeholder="Enter Handicap"
+                                    keyboardType="numeric"
+                                />
+                                <TextInput
+                                    label="Home Course"
+                                    value={homeCourse}
+                                    onChangeText={setHomeCourse}
                                 // placeholder="Enter Handicap"
-                                keyboardType="numeric"
-                            />
-                            <TextInput
-                                label="Home Course"
-                                value={homeCourse}
-                                onChangeText={setHomeCourse}
-                            // placeholder="Enter Handicap"
-                            />
-                        </ScrollView>
-                    ) : (
-                        <View >
-                            <View style={styles.walletContainer}>
-                                <Text style={styles.title}>Wallet Balance: </Text>
-                                <Text style={styles.balance}>$356.76</Text>
+                                />
+                            </ScrollView>
+                        ) : (
+                            <View >
+                                <View style={styles.walletContainer}>
+                                    <Text style={styles.title}>Wallet Balance: </Text>
+                                    <Text style={styles.balance}>$356.76</Text>
+                                </View>
+                                <View style={styles.fundContainer} >
+                                    <Button style={styles.button} mode="elevated" >Deposit Funds</Button>
+                                    <Button style={styles.button} mode="elevated" >Withdraw Funds</Button>
+                                </View>
                             </View>
-                            <View style={styles.fundContainer} >
-                                <Button style={styles.button} mode="elevated" >Deposit Funds</Button>
-                                <Button style={styles.button} mode="elevated" >Withdraw Funds</Button>
-                            </View>
-                        </View>
-                    )}
-                </Card.Content>
-                <Card.Actions style={styles.actionContainer}>
-                    {isEditing ? (
-                        <Button mode="outlined" onPress={saveProfile} disabled={isLoading}>
-                            {isLoading ? 'Saving...' : 'Save Profile'}
+                        )}
+                    </Card.Content>
+                    <Card.Actions style={styles.actionContainer}>
+                        {isEditing ? (
+                            <Button style={styles.editButton} mode="outlined" onPress={saveProfile} disabled={isLoading}>
+                                {isLoading ? 'Saving...' : 'Save Profile'}
+                            </Button>
+                        ) : (
+                            <Button style={styles.editButton} mode="outlined" onPress={() => setIsEditing(true)}>
+                                Edit Profile
+                            </Button>
+                        )}
+                    </Card.Actions>
+                        <Button style={styles.signoutButton} mode="outlined" onPress={handleSignOut}>
+                            <Text>Sign Out</Text>
                         </Button>
-                    ) : (
-                        <Button mode="outlined" onPress={() => setIsEditing(true)}>
-                            Edit Profile
-                        </Button>
-                    )}
-                    <Button mode="outlined" onPress={handleSignOut}>
-                        <Text>Sign Out</Text>
-                    </Button>
-                </Card.Actions>
+                </Card>
 
-            </Card>
-
-        </View>
+            </View>
+        </ScrollView>
     );
 };
 export default ProfileCard;
@@ -254,8 +255,28 @@ const styles = StyleSheet.create({
     },
     balance: {
         textAlign: 'center',
-        fontSize: 14,
+        fontSize: 20,
         fontWeight: 'bold',
-    }
+    },
+    editButton: {
+        backgroundColor: '#EEE9F0',
+        borderRadius: 15,
+    },
+    editButtonText: {
+        color: 'white',
+        fontSize: 16,
+    },
+    signoutButton: {
+        alignSelf: 'center',
+        width: 200,
+        borderRadius: 15,
+        borderWidth: 1,
+        marginTop: 50,
+    },
+    signoutButtonText: {
+        color: 'white',
+        fontSize: 16,
+    },
+    
 });
 
