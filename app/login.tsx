@@ -2,14 +2,11 @@ import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicat
 import React, { useState } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import { defaultStyles } from '../constants/Styles'
-import { FIREBASE_AUTH, FIREBASE_APP } from '../FirebaseConfig'
+import { FIREBASE_AUTH, FIREBASE_APP, FIREBASE_FUNCTIONS } from '../FirebaseConfig';
+import { httpsCallable } from 'firebase/functions'; // Import httpsCallable
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, UserCredential } from 'firebase/auth';
 import { router } from 'expo-router';
-import { getFirestore, doc, setDoc } from 'firebase/firestore'; // Import Firestore functions
-import { FIREBASE_DB } from '@/FirebaseConfig';
-
-
-
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
 
 
 
@@ -48,22 +45,58 @@ const Page = () => {
     setLoading(false);
   };
 
+
+  // OLD SIGNUP WITHOUT WALLET CREATION
+  // const signUp = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+  //     const
+  //       user = userCredential.user;
+  //     if (user) {
+  //       // Store user data in Firestore
+  //       await setDoc(doc(db, "users", user.uid), {
+  //         email: email,
+  //         // ... other user data will be stored when they edit profile later after signing up.
+  //       });
+  //       router.replace('/profile');
+  //     }
+  //   } catch (error: any) {
+  //     // ... error handling
+  //   }
+  //   setLoading(false);
+  // };
+
+
   const signUp = async () => {
     setLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const
-        user = userCredential.user;
+      const user = userCredential.user;
       if (user) {
         // Store user data in Firestore
         await setDoc(doc(db, "users", user.uid), {
           email: email,
           // ... other user data will be stored when they edit profile later after signing up.
         });
+
+        try {
+          const createCustomer = httpsCallable(FIREBASE_FUNCTIONS, 'createCustomer');
+          console.log("User UID:", user.uid);
+          const result = await createCustomer({
+            email: email,
+            firebaseUID: user.uid
+          }) as { data: { customerId: string } };
+          console.log("Stripe customer created:", result.data.customerId);
+        } catch (error) {
+          console.error("Error creating Stripe customer:", error);
+          // Consider adding error handling here, e.g., show an error message to the user
+        }
+
         router.replace('/profile');
       }
     } catch (error: any) {
-      // ... error handling
+      // ... error handling for signup ...
     }
     setLoading(false);
   };
