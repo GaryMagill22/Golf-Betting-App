@@ -2,9 +2,13 @@ import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicat
 import React, { useState } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import { defaultStyles } from '../constants/Styles'
-import { FIREBASE_AUTH } from '../FirebaseConfig'
+import { FIREBASE_AUTH, FIREBASE_APP } from '../FirebaseConfig'
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, UserCredential } from 'firebase/auth';
 import { router } from 'expo-router';
+import { getFirestore, doc, setDoc } from 'firebase/firestore'; // Import Firestore functions
+import { FIREBASE_DB } from '@/FirebaseConfig';
+
+
 
 
 
@@ -19,34 +23,43 @@ const Page = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  
+
   const auth = FIREBASE_AUTH;
 
+  const db = getFirestore(FIREBASE_APP); // Initialize Firestore
 
 
 
 
 
-  // OLD VERSION WITHOUT WALLET INITIALIZATION
   const signIn = async () => {
-    setLoading(true)
+    setLoading(true);
     try {
-      const user = await signInWithEmailAndPassword(auth, email, password)
-      if (user) router.replace('/home')
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      if (user) {
+        router.replace('/home');
+      }
     } catch (error: any) {
-      console.log(error)
+      console.log(error);
       alert('Sign in failed: ' + error.message);
     }
-    setLoading(false)
-  }
-
+    setLoading(false);
+  };
 
   const signUp = async () => {
     setLoading(true);
     try {
-      const user = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const
+        user = userCredential.user;
       if (user) {
-        // Redirect to profile page for user to complete their profile
+        // Store user data in Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          email: email,
+          // ... other user data will be stored when they edit profile later after signing up.
+        });
         router.replace('/profile');
       }
     } catch (error: any) {
@@ -54,6 +67,7 @@ const Page = () => {
     }
     setLoading(false);
   };
+
 
   return (
     <KeyboardAvoidingView

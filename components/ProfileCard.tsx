@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Image, StyleProp, ViewProps, ViewStyle, ScrollView } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { Avatar, Button, Card, TextInput } from 'react-native-paper';
-import { getAuth, updateProfile } from 'firebase/auth';
+import { getAuth, updateProfile, User, signOut } from 'firebase/auth';
 import { IconSource } from 'react-native-paper/lib/typescript/components/Icon';
 import { ThemeProp } from 'react-native-paper/lib/typescript/types';
 import CardTitle from 'react-native-paper/lib/typescript/components/Card/CardTitle';
-import { User } from 'firebase/auth';
 import { TouchableOpacity } from 'react-native-gesture-handler';
+import { getFirestore, doc, setDoc, updateDoc } from 'firebase/firestore'; // Import Firestore functions
+import { FIREBASE_APP } from '@/FirebaseConfig';
+
 
 interface ProfileCardProps {
     user?: User | null;
@@ -19,36 +21,70 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const [lastName, setLastName] = useState('');
     const [username, setUsername] = useState(currentUser?.displayName || ''); // Initialize username
     const [handicap, setHandicap] = useState(40); // Initialize handicap
+    const [homeCourse, setHomeCourse] = useState(''); // Initialize home course
     const [isEditing, setIsEditing] = useState(false); // State to track edit mode
     const [isLoading, setIsLoading] = useState(false); // State for loading indicator
 
+
+    const auth = getAuth();
+    const db = getFirestore(FIREBASE_APP); // Initialize Firestore
+
+
     useEffect(() => {
-        const user = getAuth().currentUser;
+        const user = auth.currentUser;
     }, []);
+
+
 
     const saveProfile = async () => {
         setIsLoading(true);
         try {
+            const currentUser = getAuth().currentUser;
             if (currentUser) {
-                await updateProfile(currentUser, { displayName: username }); // Update username
+                // 1. Update the displayName in Firebase Authentication
+                await updateProfile(currentUser, { displayName: username });
+
+                // 2. Update profile data in Firestore
+                await updateDoc(doc(db, "users", currentUser.uid), {
+                    firstName: firstName,
+                    lastName: lastName,
+                    username: username,
+                    handicap: handicap,
+                    homeCourse: homeCourse,
+                });
+
+                console.log('Profile updated successfully!');
+                setIsEditing(false);
             } else {
                 console.error('No current user to update');
             }
-            console.log('Profile updated successfully!');
-            setIsEditing(false); // Exit edit mode
         } catch (error) {
             console.error('Error updating profile:', error);
-            // Handle errors appropriately (e.g., display an error message)
         } finally {
             setIsLoading(false);
         }
     };
 
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+            // Navigate to the login screen or perform other actions after signing out
+            console.log('User signed out successfully!');
+        } catch (error: any) {
+            console.error('Error signing out:', error);
+            // Handle the error, e.g., show an error message to the user
+        }
+    };
+
+
+
+
     return (
-        <View style={styles.card}>
-            <Card>
+        <View style={styles.container}>
+            <Card style={styles.card}>
                 <Avatar.Image style={styles.AvatarImage} size={80} source={require('../assets/images/avatar-circle.png')} />
-                <Card.Title title={currentUser?.displayName} titleStyle={styles.cardTitle} />
+                <Card.Title title={currentUser?.displayName || 'Unknown Username'} titleStyle={styles.cardTitle}
+                />
                 <Text style={styles.profileText}>{currentUser?.email || 'Unknown Email'}</Text>
                 <Text style={styles.profileText}>Handicap: {handicap}</Text>
                 <Card.Content style={styles.cardContent}>
@@ -79,6 +115,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                                 // placeholder="Enter Handicap"
                                 keyboardType="numeric"
                             />
+                            <TextInput
+                                label="Home Course"
+                                value={homeCourse}
+                                onChangeText={setHomeCourse}
+                            // placeholder="Enter Handicap"
+                            />
                         </ScrollView>
                     ) : (
                         <View >
@@ -103,10 +145,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                             Edit Profile
                         </Button>
                     )}
-
-
+                    <Button mode="outlined" onPress={handleSignOut}>
+                        <Text>Sign Out</Text>
+                    </Button>
                 </Card.Actions>
+
             </Card>
+
         </View>
     );
 };
@@ -114,7 +159,13 @@ export default ProfileCard;
 
 
 const styles = StyleSheet.create({
+    container: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     card: {
+        marginVertical: 10,
+        height: 600,
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 15,
@@ -134,7 +185,7 @@ const styles = StyleSheet.create({
     },
     cardContent: {
         alignItems: 'center',
-        height: 200,
+        height: 'auto',
     },
     profileText: {
         textAlign: 'center',
@@ -143,7 +194,7 @@ const styles = StyleSheet.create({
     },
     scrollView: {
         maxHeight: 1000,
-        width: 200,
+        width: 300,
     },
     walletContainer: {
         flexDirection: 'column',
@@ -184,3 +235,4 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     }
 });
+
