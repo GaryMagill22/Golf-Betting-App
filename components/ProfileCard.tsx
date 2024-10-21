@@ -7,7 +7,7 @@ import { IconSource } from 'react-native-paper/lib/typescript/components/Icon';
 import { ThemeProp } from 'react-native-paper/lib/typescript/types';
 import CardTitle from 'react-native-paper/lib/typescript/components/Card/CardTitle';
 import { TouchableOpacity } from 'react-native-gesture-handler';
-import { getFirestore, doc, setDoc, updateDoc } from 'firebase/firestore'; // Import Firestore functions
+import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore'; // Import Firestore functions
 import { FIREBASE_APP } from '@/FirebaseConfig';
 
 
@@ -31,9 +31,32 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
 
 
     useEffect(() => {
-        const user = auth.currentUser;
-    }, []);
+        const fetchUserData = async () => {
+            if (currentUser) {
+                try {
+                    const userDocRef = doc(db, "users", currentUser.uid);
+                    const userDocSnap = await getDoc(userDocRef);
 
+                    if (userDocSnap.exists()) {
+                        const
+                            userData = userDocSnap.data();
+                        setFirstName(userData.firstName
+                            || '');
+                        setLastName(userData.lastName || '');
+                        setUsername(userData.username || currentUser.displayName || '');
+                        setHandicap(userData.handicap || 40);
+                        setHomeCourse(userData.homeCourse || '');
+                    } else {
+                        console.log("No such document!");
+                    }
+                } catch (error) {
+                    console.error("Error fetching user data:", error);
+                }
+            }
+        };
+
+        fetchUserData();
+    }, [currentUser]);
 
 
     const saveProfile = async () => {
@@ -41,10 +64,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
         try {
             const currentUser = getAuth().currentUser;
             if (currentUser) {
-                // 1. Update the displayName in Firebase Authentication
+                // Update the displayName in Firebase Authentication
                 await updateProfile(currentUser, { displayName: username });
 
-                // 2. Update profile data in Firestore
+                //  Update profile data in Firestore
                 await updateDoc(doc(db, "users", currentUser.uid), {
                     firstName: firstName,
                     lastName: lastName,
