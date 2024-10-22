@@ -12,7 +12,6 @@ import { FIREBASE_APP, FIREBASE_FUNCTIONS, FIREBASE_DB } from '@/FirebaseConfig'
 import { httpsCallable } from 'firebase/functions';
 import { useStripe } from '@stripe/stripe-react-native';
 
-const stripe = useStripe();
 
 
 
@@ -30,6 +29,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const [isEditing, setIsEditing] = useState(false); // State to track edit mode
     const [isLoading, setIsLoading] = useState(false); // State for loading indicator
     const [walletBalance, setWalletBalance] = useState(0);
+
+    const stripe = useStripe();
 
 
     const auth = getAuth();
@@ -91,26 +92,26 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     }, [currentUser]);
 
 
-    const handleFundWallet = async () => {
-        try {
-            const fundWallet = httpsCallable(FIREBASE_FUNCTIONS, 'fundWallet');
-            const amountToFund = 1000; // Example: $10 (in cents)
-            const result = await fundWallet({ amount: amountToFund });
+    // const handleFundWallet = async () => {
+    //     try {
+    //         const fundWallet = httpsCallable(FIREBASE_FUNCTIONS, 'fundWallet');
+    //         const amountToFund = 1000; // Example: $10 (in cents)
+    //         const result = await fundWallet({ amount: amountToFund });
 
-            // Use the clientSecret returned from the fundWallet function
-            const { clientSecret } = result.data as { clientSecret: string };
-            const { error } = await stripe.confirmPayment(clientSecret); // Pass clientSecret as an object
+    //         // Use the clientSecret returned from the fundWallet function
+    //         const { clientSecret } = result.data as { clientSecret: string };
+    //         const { error } = await stripe.confirmPayment(clientSecret); // Pass clientSecret as an object
 
-            if (error) {
-                console.error("Payment failed:", error);
-                Alert.alert('Payment Error', error.message);
-            } else {
-                // ... (rest of the code remains the same)
-            }
-        } catch (error) {
-            // ...
-        }
-    };
+    //         if (error) {
+    //             console.error("Payment failed:", error);
+    //             Alert.alert('Payment Error', error.message);
+    //         } else {
+    //             // ... (rest of the code remains the same)
+    //         }
+    //     } catch (error) {
+    //         // ...
+    //     }
+    // };
 
 
 
