@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleProp, ViewProps, ViewStyle, ScrollView } from 'react-native';
+import { View, Text, Image, StyleProp, ViewProps, ViewStyle, ScrollView, Alert } from 'react-native';
 import { StyleSheet } from 'react-native';
 import { Avatar, Button, Card, TextInput } from 'react-native-paper';
 import { getAuth, updateProfile, User, signOut } from 'firebase/auth';
@@ -8,7 +8,12 @@ import { ThemeProp } from 'react-native-paper/lib/typescript/types';
 import CardTitle from 'react-native-paper/lib/typescript/components/Card/CardTitle';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore'; // Import Firestore functions
-import { FIREBASE_APP } from '@/FirebaseConfig';
+import { FIREBASE_APP, FIREBASE_FUNCTIONS, FIREBASE_DB } from '@/FirebaseConfig';
+import { httpsCallable } from 'firebase/functions';
+import { useStripe } from '@stripe/stripe-react-native';
+
+const stripe = useStripe();
+
 
 
 interface ProfileCardProps {
@@ -61,15 +66,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
 
 
 
-    
+
     useEffect(() => {
         const fetchWalletBalance = async () => {
             if (currentUser) {
                 try {
                     // Fetch the wallet balance from Firestore
-                    const walletDocRef = doc(db, "users", currentUser.uid); 
+                    const walletDocRef = doc(db, "users", currentUser.uid);
                     const walletDocSnap = await getDoc(walletDocRef);
-                    
+
                     if (walletDocSnap.exists()) {
                         const walletData = walletDocSnap.data();
                         setWalletBalance(walletData.walletBalance || 0); // Accessing walletBalance
@@ -77,17 +82,38 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                     } else {
                         console.log("No such document!");
                     }
-                } catch (error) {   
+                } catch (error) {
                     console.error("Error fetching wallet balance:", error);
                 }
             }
         };
-
         fetchWalletBalance();
     }, [currentUser]);
 
 
-    
+    // const handleFundWallet = async () => {
+    //     try {
+    //         const fundWallet = httpsCallable(FIREBASE_FUNCTIONS, 'fundWallet');
+    //         const amountToFund = 1000; // Example: $10 (in cents)
+    //         const result = await fundWallet({ amount: amountToFund });
+
+    //         // Use the clientSecret returned from the fundWallet function
+    //         const { clientSecret } = result.data as { clientSecret: string };
+    //         const { error } = await stripe.confirmPayment(clientSecret); // Pass clientSecret as an object
+
+    //         if (error) {
+    //             console.error("Payment failed:", error);
+    //             Alert.alert('Payment Error', error.message);
+    //         } else {
+    //             // ... (rest of the code remains the same)
+    //         }
+    //     } catch (error) {
+    //         // ...
+    //     }
+    // };
+
+
+
     const saveProfile = async () => {
         setIsLoading(true);
         try {
@@ -182,7 +208,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                                     <Text style={styles.balance}>${walletBalance}</Text>
                                 </View>
                                 <View style={styles.fundContainer} >
-                                    <Button style={styles.button} mode="elevated" >Deposit Funds</Button>
+                                    <Button style={styles.button} mode="elevated"  >Deposit Funds</Button>
                                     <Button style={styles.button} mode="elevated" >Withdraw Funds</Button>
                                 </View>
                             </View>
@@ -199,9 +225,9 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                             </Button>
                         )}
                     </Card.Actions>
-                        <Button style={styles.signoutButton} mode="outlined" onPress={handleSignOut}>
-                            <Text>Sign Out</Text>
-                        </Button>
+                    <Button style={styles.signoutButton} mode="outlined" onPress={handleSignOut}>
+                        <Text>Sign Out</Text>
+                    </Button>
                 </Card>
 
             </View>
@@ -306,6 +332,6 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
     },
-    
+
 });
 
