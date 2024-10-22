@@ -73,34 +73,52 @@ const Page = () => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+  
       if (user) {
-        // Store user data in Firestore
-        await setDoc(doc(db, "users", user.uid), {
-          email: email,
-          // ... other user data will be stored when they edit profile later after signing up.
-        });
-
         try {
+          console.log("Data being sent to createCustomer:", {
+            email: email,
+            firebaseUID: user.uid,
+          });
+  
           const createCustomer = httpsCallable(FIREBASE_FUNCTIONS, 'createCustomer');
-          console.log("User UID:", user.uid);
           const result = await createCustomer({
             email: email,
-            firebaseUID: user.uid
-          }) as { data: { customerId: string } };
-          console.log("Stripe customer created:", result.data.customerId);
-        } catch (error) {
+            firebaseUID: user.uid,
+          });
+  
+          const data = result.data as { customerId: string };
+          console.log("Stripe customer created:", data.customerId);
+  
+          // Store user data along with customerId in Firestore
+          await setDoc(doc(db, "users", user.uid), {
+            email: email,
+            firebaseUID: user.uid, // It's good practice to store this as well
+            stripeCustomerId: data.customerId, 
+          });
+  
+          // Successful signup and Stripe customer creation
+          router.replace('/profile');
+  
+        } catch (error: any) {
           console.error("Error creating Stripe customer:", error);
-          // Consider adding error handling here, e.g., show an error message to the user
+  
+          if (error.code === 'functions/invalid-argument') {
+            Alert.alert('Error', 'Invalid data provided for customer creation.');
+          } else if (error.details && error.details.message) {
+            Alert.alert('Error', error.details.message); 
+          } else {
+            Alert.alert('Error', 'Failed to create your account. Please try again later.');
+          }
         }
-
-        router.replace('/profile');
       }
     } catch (error: any) {
-      // ... error handling for signup ...
+      console.error("Error during signup:", error);
+      Alert.alert('Signup Error', error.message);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
-
 
   return (
     <KeyboardAvoidingView
