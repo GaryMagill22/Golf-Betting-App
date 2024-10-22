@@ -20,6 +20,7 @@ exports.createCustomer = functions.https.onCall(async (data, context) => {
     // Store the Stripe customer ID in Firestore
     await updateDoc(doc(db, "users", data.firebaseUID), {
       stripeCustomerId: customer.id,
+      walletBalance: 0,
     });
     // Return the Stripe customer ID (optional)
     return {customerId: customer.id};

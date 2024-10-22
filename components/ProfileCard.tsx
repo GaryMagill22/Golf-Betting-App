@@ -24,6 +24,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const [homeCourse, setHomeCourse] = useState(''); // Initialize home course
     const [isEditing, setIsEditing] = useState(false); // State to track edit mode
     const [isLoading, setIsLoading] = useState(false); // State for loading indicator
+    const [walletBalance, setWalletBalance] = useState(0);
 
 
     const auth = getAuth();
@@ -59,6 +60,34 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     }, [currentUser]);
 
 
+
+    
+    useEffect(() => {
+        const fetchWalletBalance = async () => {
+            if (currentUser) {
+                try {
+                    // Fetch the wallet balance from Firestore
+                    const walletDocRef = doc(db, "users", currentUser.uid); 
+                    const walletDocSnap = await getDoc(walletDocRef);
+                    
+                    if (walletDocSnap.exists()) {
+                        const walletData = walletDocSnap.data();
+                        setWalletBalance(walletData.walletBalance || 0); // Accessing walletBalance
+                        console.log('Wallet balance fetched successfully!');
+                    } else {
+                        console.log("No such document!");
+                    }
+                } catch (error) {   
+                    console.error("Error fetching wallet balance:", error);
+                }
+            }
+        };
+
+        fetchWalletBalance();
+    }, [currentUser]);
+
+
+    
     const saveProfile = async () => {
         setIsLoading(true);
         try {
@@ -150,7 +179,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                             <View >
                                 <View style={styles.walletContainer}>
                                     <Text style={styles.title}>Wallet Balance: </Text>
-                                    <Text style={styles.balance}>$356.76</Text>
+                                    <Text style={styles.balance}>${walletBalance}</Text>
                                 </View>
                                 <View style={styles.fundContainer} >
                                     <Button style={styles.button} mode="elevated" >Deposit Funds</Button>

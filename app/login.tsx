@@ -10,9 +10,6 @@ import { getFirestore, doc, setDoc } from 'firebase/firestore';
 
 
 
-
-
-
 const Page = () => {
 
   const { type } = useLocalSearchParams<{ type: string }>();
@@ -45,27 +42,6 @@ const Page = () => {
     setLoading(false);
   };
 
-
-  // OLD SIGNUP WITHOUT WALLET CREATION
-  // const signUp = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-  //     const
-  //       user = userCredential.user;
-  //     if (user) {
-  //       // Store user data in Firestore
-  //       await setDoc(doc(db, "users", user.uid), {
-  //         email: email,
-  //         // ... other user data will be stored when they edit profile later after signing up.
-  //       });
-  //       router.replace('/profile');
-  //     }
-  //   } catch (error: any) {
-  //     // ... error handling
-  //   }
-  //   setLoading(false);
-  // };
 
 
   const signUp = async () => {
