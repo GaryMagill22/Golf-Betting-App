@@ -9,12 +9,6 @@ import { getAuth } from 'firebase/auth';
 
 const ProfileScreen = () => {
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [changePassword, setChangePassword] = useState('');
-  const [handicap, setHandicap] = useState('');
 
 
 
