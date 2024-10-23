@@ -32,7 +32,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const [walletBalance, setWalletBalance] = useState(0);
     const stripePromise = loadStripe("pk_test_51NpbUBHJaZP62m3KKuApJPp7c67kL8vOpxwCr4ZDVxgDE1c01CpnNqSNbURSEzKnyGTOEtVLOV38NOq3pRDY29Px00WnKFvNsV");
     const stripe = useStripe();
-
+    
+    const {initPaymentSheet, presentPaymentSheet} = useStripe();
 
     const auth = getAuth();
     const db = getFirestore(FIREBASE_APP); // Initialize Firestore
@@ -166,11 +167,9 @@ const saveProfile = async () => {
 const handleSignOut = async () => {
     try {
         await signOut(auth);
-        // Navigate to the login screen or perform other actions after signing out
         console.log('User signed out successfully!');
     } catch (error: any) {
         console.error('Error signing out:', error);
-        // Handle the error, e.g., show an error message to the user
     }
 };
 
@@ -225,7 +224,7 @@ return (
                         <View >
                             <View style={styles.walletContainer}>
                                 <Text style={styles.title}>Wallet Balance: </Text>
-                                <Text style={styles.balance}>${walletBalance}</Text>
+                                <Text style={styles.balance}>${walletBalance / 100}</Text>
                             </View>
                             <View style={styles.fundContainer} >
                                 <Button style={styles.button} mode="elevated" onPress={handleFundWallet} >Deposit Funds</Button>
@@ -254,6 +253,7 @@ return (
     </ScrollView>
 );
 };
+
 export default ProfileCard;
 
 
