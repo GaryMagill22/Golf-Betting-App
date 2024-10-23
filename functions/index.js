@@ -52,7 +52,7 @@ exports.fundWallet = functions.https.onCall(async (data, context) => {
   }
 });
 
-exports.handlePaymentIntentSucceeded = functions.https.onRequest(async (req, res) => {
+exports.paymentIntentSucceeded = functions.https.onRequest(async (req, res) => {
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
   const sig = req.headers["stripe-signature"];
 
