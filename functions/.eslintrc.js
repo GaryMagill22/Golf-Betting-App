@@ -12,6 +12,10 @@ module.exports = {
     "google",
   ],
   rules: {
+    "valid-jsdoc": ["error", {
+      "requireParamDescription": true,
+      "requireReturnDescription": true,
+    }],
     "no-restricted-globals": ["error", "name", "length"],
     "prefer-arrow-callback": "error",
     "quotes": ["error", "double", {"allowTemplateLiterals": true}],

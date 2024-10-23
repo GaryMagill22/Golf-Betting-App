@@ -9,7 +9,7 @@ import CardTitle from 'react-native-paper/lib/typescript/components/Card/CardTit
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore'; // Import Firestore functions
 import { FIREBASE_APP, FIREBASE_FUNCTIONS, FIREBASE_DB } from '@/FirebaseConfig';
-import { httpsCallable } from 'firebase/functions';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useStripe } from '@stripe/stripe-react-native';
 
 
@@ -36,6 +36,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const auth = getAuth();
     const db = getFirestore(FIREBASE_APP); // Initialize Firestore
 
+    const FIREBASE_FUNCTIONS = getFunctions(FIREBASE_APP, 'us-central1');
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -95,21 +96,47 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     // const handleFundWallet = async () => {
     //     try {
     //         const fundWallet = httpsCallable(FIREBASE_FUNCTIONS, 'fundWallet');
-    //         const amountToFund = 1000; // Example: $10 (in cents)
-    //         const result = await fundWallet({ amount: amountToFund });
+    //         const amountToFund = 1000; // Example: $10 (in cents) or get this from user input
+    //         const result = await fundWallet({ amount: amountToFund }) as { data: { clientSecret: string } };
 
-    //         // Use the clientSecret returned from the fundWallet function
-    //         const { clientSecret } = result.data as { clientSecret: string };
-    //         const { error } = await stripe.confirmPayment(clientSecret); // Pass clientSecret as an object
+    //         if (result.data && result.data.clientSecret) {
+    //             const { clientSecret } = result.data;
+    //             const { error, paymentIntent } = await stripe.confirmPayment(clientSecret);
 
-    //         if (error) {
-    //             console.error("Payment failed:", error);
-    //             Alert.alert('Payment Error', error.message);
+    //             if (error) {
+    //                 console.error("Payment failed:", error);
+    //                 Alert.alert('Payment Error', error.message);
+    //             } else if (paymentIntent && paymentIntent.status === 'Succeeded') {
+    //                 // Payment successful
+    //                 console.log('Payment successful!');
+
+    //                 // Ensure currentUser is defined
+    //                 const currentUser = getAuth().currentUser;
+    //                 if (!currentUser) {
+    //                     throw new Error('No current user found');
+    //                 }
+
+    //                 // Update wallet balance in Firestore
+    //                 const userDocRef = doc(db, "users", currentUser.uid);
+    //                 const userDocSnap = await getDoc(userDocRef);
+
+    //                 if (userDocSnap.exists()) {
+    //                     const currentBalance = userDocSnap.data().walletBalance || 0;
+    //                     const newBalance = currentBalance + amountToFund;
+
+    //                     await updateDoc(userDocRef, { walletBalance: newBalance });
+    //                     setWalletBalance(newBalance); // Update local state
+    //                 }
+
+    //                 // Update UI or perform other actions
+    //             }
     //         } else {
-    //             // ... (rest of the code remains the same)
+    //             console.error("No clientSecret received");
+    //             Alert.alert('Error', 'Failed to initiate payment.');
     //         }
     //     } catch (error) {
-    //         // ...
+    //         console.error("Error funding wallet:", error);
+    //         Alert.alert('Error', 'Failed to fund wallet.');
     //     }
     // };
 
@@ -209,7 +236,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                                     <Text style={styles.balance}>${walletBalance}</Text>
                                 </View>
                                 <View style={styles.fundContainer} >
-                                    <Button style={styles.button} mode="elevated"  >Deposit Funds</Button>
+                                    <Button style={styles.button} mode="elevated"   >Deposit Funds</Button>
                                     <Button style={styles.button} mode="elevated" >Withdraw Funds</Button>
                                 </View>
                             </View>
