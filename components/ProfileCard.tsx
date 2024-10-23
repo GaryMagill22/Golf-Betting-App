@@ -11,6 +11,7 @@ import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore'; // Im
 import { FIREBASE_APP, FIREBASE_FUNCTIONS, FIREBASE_DB } from '@/FirebaseConfig';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useStripe } from '@stripe/stripe-react-native';
+import { loadStripe } from '@stripe/stripe-js';
 
 
 
@@ -29,7 +30,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const [isEditing, setIsEditing] = useState(false); // State to track edit mode
     const [isLoading, setIsLoading] = useState(false); // State for loading indicator
     const [walletBalance, setWalletBalance] = useState(0);
-
+    const stripePromise = loadStripe("pk_test_51NpbUBHJaZP62m3KKuApJPp7c67kL8vOpxwCr4ZDVxgDE1c01CpnNqSNbURSEzKnyGTOEtVLOV38NOq3pRDY29Px00WnKFvNsV");
     const stripe = useStripe();
 
 
@@ -92,46 +93,34 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
         fetchWalletBalance();
     }, [currentUser]);
 
-
     const handleFundWallet = async () => {
         try {
+            console.log("Calling fundWallet function...");
             const fundWallet = httpsCallable(FIREBASE_FUNCTIONS, 'fundWallet');
             const amountToFund = 1000; // Example: $10 (in cents) or get this from user input
-            const result = await fundWallet({ amount: amountToFund }) as { data: { clientSecret: string } };
+            const result = await fundWallet({ amount: amountToFund }) as { data: { sessionId: string } };
 
-            if (result.data && result.data.clientSecret) {
-                const { clientSecret } = result.data;
-                const { error, paymentIntent } = await stripe.confirmPayment(clientSecret);
+            console.log("Result from fundWallet:", result);
+
+            const sessionId = result.data?.sessionId;
+
+            if (sessionId) {
+                console.log("Initiating Stripe Checkout...");
+                const stripe = await stripePromise;
+                if (!stripe) {
+                    console.error("Stripe.js has not loaded yet.");
+                    Alert.alert('Error', 'Stripe.js has not loaded yet.');
+                    return;
+                }
+
+                const { error } = await stripe.redirectToCheckout({ sessionId });
 
                 if (error) {
-                    console.error("Payment failed:", error);
-                    Alert.alert('Payment Error', error.message);
-                } else if (paymentIntent && paymentIntent.status === 'Succeeded') {
-                    // Payment successful
-                    console.log('Payment successful!');
-
-                    // Ensure currentUser is defined
-                    const currentUser = getAuth().currentUser;
-                    if (!currentUser) {
-                        throw new Error('No current user found');
-                    }
-
-                    // Update wallet balance in Firestore
-                    const userDocRef = doc(db, "users", currentUser.uid);
-                    const userDocSnap = await getDoc(userDocRef);
-
-                    if (userDocSnap.exists()) {
-                        const currentBalance = userDocSnap.data().walletBalance || 0;
-                        const newBalance = currentBalance + amountToFund;
-
-                        await updateDoc(userDocRef, { walletBalance: newBalance });
-                        setWalletBalance(newBalance); // Update local state
-                    }
-
-                    // Update UI or perform other actions
+                    console.error("Stripe redirect failed:", error);
+                    Alert.alert('Error', 'Failed to redirect to Stripe.');
                 }
             } else {
-                console.error("No clientSecret received");
+                console.error("No sessionId received");
                 Alert.alert('Error', 'Failed to initiate payment.');
             }
         } catch (error) {
@@ -139,128 +128,131 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
             Alert.alert('Error', 'Failed to fund wallet.');
         }
     };
+    
+    
 
 
 
-    const saveProfile = async () => {
-        setIsLoading(true);
-        try {
-            const currentUser = getAuth().currentUser;
-            if (currentUser) {
-                // Update the displayName in Firebase Authentication
-                await updateProfile(currentUser, { displayName: username });
 
-                //  Update profile data in Firestore
-                await updateDoc(doc(db, "users", currentUser.uid), {
-                    firstName: firstName,
-                    lastName: lastName,
-                    username: username,
-                    handicap: handicap,
-                    homeCourse: homeCourse,
-                });
+const saveProfile = async () => {
+    setIsLoading(true);
+    try {
+        const currentUser = getAuth().currentUser;
+        if (currentUser) {
+            // Update the displayName in Firebase Authentication
+            await updateProfile(currentUser, { displayName: username });
 
-                console.log('Profile updated successfully!');
-                setIsEditing(false);
-            } else {
-                console.error('No current user to update');
-            }
-        } catch (error) {
-            console.error('Error updating profile:', error);
-        } finally {
-            setIsLoading(false);
+            //  Update profile data in Firestore
+            await updateDoc(doc(db, "users", currentUser.uid), {
+                firstName: firstName,
+                lastName: lastName,
+                username: username,
+                handicap: handicap,
+                homeCourse: homeCourse,
+            });
+
+            console.log('Profile updated successfully!');
+            setIsEditing(false);
+        } else {
+            console.error('No current user to update');
         }
-    };
+    } catch (error) {
+        console.error('Error updating profile:', error);
+    } finally {
+        setIsLoading(false);
+    }
+};
 
-    const handleSignOut = async () => {
-        try {
-            await signOut(auth);
-            // Navigate to the login screen or perform other actions after signing out
-            console.log('User signed out successfully!');
-        } catch (error: any) {
-            console.error('Error signing out:', error);
-            // Handle the error, e.g., show an error message to the user
-        }
-    };
+const handleSignOut = async () => {
+    try {
+        await signOut(auth);
+        // Navigate to the login screen or perform other actions after signing out
+        console.log('User signed out successfully!');
+    } catch (error: any) {
+        console.error('Error signing out:', error);
+        // Handle the error, e.g., show an error message to the user
+    }
+};
 
 
 
 
-    return (
-        <ScrollView>
-            <View style={styles.container}>
-                <Card style={styles.card}>
-                    <Avatar.Image style={styles.AvatarImage} size={80} source={require('../assets/images/avatar-circle.png')} />
-                    <Card.Title title={currentUser?.displayName || 'Unknown Username'} titleStyle={styles.cardTitle}
-                    />
-                    <Text style={styles.profileText}>{currentUser?.email || 'Unknown Email'}</Text>
-                    <Text style={styles.profileText}>Handicap: {handicap}</Text>
-                    <Card.Content style={styles.cardContent}>
-                        {isEditing ? (
-                            <ScrollView style={styles.scrollView}>
-                                <TextInput
-                                    label="First Name"
-                                    value={firstName}
-                                    onChangeText={setFirstName}
-                                // placeholder="First Name"
-                                />
-                                <TextInput
-                                    label="Last Name"
-                                    value={lastName}
-                                    onChangeText={setLastName}
-                                // placeholder="Last Name"
-                                />
-                                <TextInput
-                                    label="Username"
-                                    value={username}
-                                    onChangeText={setUsername}
-                                // placeholder="Username"
-                                />
-                                <TextInput
-                                    label="Handicap"
-                                    value={handicap.toString()}
-                                    onChangeText={(text) => setHandicap(Number(text))}
-                                    // placeholder="Enter Handicap"
-                                    keyboardType="numeric"
-                                />
-                                <TextInput
-                                    label="Home Course"
-                                    value={homeCourse}
-                                    onChangeText={setHomeCourse}
+return (
+    <ScrollView>
+        <View style={styles.container}>
+            <Card style={styles.card}>
+                <Avatar.Image style={styles.AvatarImage} size={80} source={require('../assets/images/avatar-circle.png')} />
+                <Card.Title title={currentUser?.displayName || 'Unknown Username'} titleStyle={styles.cardTitle}
+                />
+                <Text style={styles.profileText}>{currentUser?.email || 'Unknown Email'}</Text>
+                <Text style={styles.profileText}>Handicap: {handicap}</Text>
+                <Card.Content style={styles.cardContent}>
+                    {isEditing ? (
+                        <ScrollView style={styles.scrollView}>
+                            <TextInput
+                                label="First Name"
+                                value={firstName}
+                                onChangeText={setFirstName}
+                            // placeholder="First Name"
+                            />
+                            <TextInput
+                                label="Last Name"
+                                value={lastName}
+                                onChangeText={setLastName}
+                            // placeholder="Last Name"
+                            />
+                            <TextInput
+                                label="Username"
+                                value={username}
+                                onChangeText={setUsername}
+                            // placeholder="Username"
+                            />
+                            <TextInput
+                                label="Handicap"
+                                value={handicap.toString()}
+                                onChangeText={(text) => setHandicap(Number(text))}
                                 // placeholder="Enter Handicap"
-                                />
-                            </ScrollView>
-                        ) : (
-                            <View >
-                                <View style={styles.walletContainer}>
-                                    <Text style={styles.title}>Wallet Balance: </Text>
-                                    <Text style={styles.balance}>${walletBalance}</Text>
-                                </View>
-                                <View style={styles.fundContainer} >
-                                    <Button style={styles.button} mode="elevated"  onPress={handleFundWallet} >Deposit Funds</Button>
-                                    <Button style={styles.button} mode="elevated" >Withdraw Funds</Button>
-                                </View>
+                                keyboardType="numeric"
+                            />
+                            <TextInput
+                                label="Home Course"
+                                value={homeCourse}
+                                onChangeText={setHomeCourse}
+                            // placeholder="Enter Handicap"
+                            />
+                        </ScrollView>
+                    ) : (
+                        <View >
+                            <View style={styles.walletContainer}>
+                                <Text style={styles.title}>Wallet Balance: </Text>
+                                <Text style={styles.balance}>${walletBalance}</Text>
                             </View>
-                        )}
-                    </Card.Content>
-                    <Card.Actions style={styles.actionContainer}>
-                        {isEditing ? (
-                            <Button style={styles.editButton} mode="outlined" onPress={saveProfile} disabled={isLoading}>
-                                {isLoading ? 'Saving...' : 'Save Profile'}
-                            </Button>
-                        ) : (
-                            <Button style={styles.editButton} mode="outlined" onPress={() => setIsEditing(true)}>
-                                Edit Profile
-                            </Button>
-                        )}
-                    </Card.Actions>
-                    <Button style={styles.signoutButton} mode="outlined" onPress={handleSignOut}>
-                        <Text>Sign Out</Text>
-                    </Button>
-                </Card>
+                            <View style={styles.fundContainer} >
+                                <Button style={styles.button} mode="elevated" onPress={handleFundWallet} >Deposit Funds</Button>
+                                <Button style={styles.button} mode="elevated" >Withdraw Funds</Button>
+                            </View>
+                        </View>
+                    )}
+                </Card.Content>
+                <Card.Actions style={styles.actionContainer}>
+                    {isEditing ? (
+                        <Button style={styles.editButton} mode="outlined" onPress={saveProfile} disabled={isLoading}>
+                            {isLoading ? 'Saving...' : 'Save Profile'}
+                        </Button>
+                    ) : (
+                        <Button style={styles.editButton} mode="outlined" onPress={() => setIsEditing(true)}>
+                            Edit Profile
+                        </Button>
+                    )}
+                </Card.Actions>
+                <Button style={styles.signoutButton} mode="outlined" onPress={handleSignOut}>
+                    <Text>Sign Out</Text>
+                </Button>
+            </Card>
 
-            </View>
-        </ScrollView>
-    );
+        </View>
+    </ScrollView>
+);
 };
 export default ProfileCard;
 

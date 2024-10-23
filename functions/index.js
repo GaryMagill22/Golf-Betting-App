@@ -2,7 +2,7 @@ require("dotenv").config();
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
-const {doc, updateDoc, getDoc} = require("firebase/firestore");
+const {doc, updateDoc} = require("firebase/firestore");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -33,62 +33,71 @@ exports.createCustomer = functions.https.onCall(async (data, context) => {
 
 exports.fundWallet = functions.https.onCall(async (data, context) => {
   try {
-    const userDoc = await getDoc(doc(db, "users", context.auth.uid));
+    const userDoc = await admin.firestore().collection("users").doc(context.auth.uid).get();
     const stripeCustomerId = userDoc.data().stripeCustomerId;
-    // Create a Payment Intent
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: data.amount, // Amount to add to the wallet (in cents)
-      currency: "usd",
+
+    // Create a Checkout Session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
       customer: stripeCustomerId,
-      automatic_payment_methods: {
-        enabled: true,
-      },
+      line_items: [{
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: "Deposit Funds",
+          },
+          unit_amount: data.amount,
+        },
+        quantity: 1,
+      }],
+      mode: "payment",
+      success_url: "exp://localhost:8080/payment-success",
+      cancel_url: "exp://localhost:8080/payment-canceled",
     });
 
-    return {clientSecret: paymentIntent.client_secret};
+    return {sessionId: session.id};
   } catch (error) {
-    console.error("Error creating Payment Intent:", error);
-    throw new functions.https.HttpsError("internal", "Failed to fund wallet");
+    console.error("Error creating Checkout Session:", error);
+    throw new functions.https.HttpsError("internal", "Failed to create Checkout Session");
   }
 });
 
-exports.paymentIntentSucceeded = functions.https.onRequest(async (req, res) => {
-  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+exports.checkoutSessionCompleted = functions.https.onRequest(async (req, res) => {
+  const endpointSecret = functions.config().stripe.webhook_secret;
   const sig = req.headers["stripe-signature"];
 
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.rawBody,
-        sig, endpointSecret);
+    event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
   } catch (err) {
     console.error(`Webhook Error: ${err.message}`);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  if (event.type === "payment_intent.succeeded") {
-    const paymentIntent = event.data.object;
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
     try {
-      await updateUserWalletBalance(paymentIntent);
-      return res.json({received: true});// Added return statement here
+      await updateUserWalletBalance(session);
+      return res.json({received: true});
     } catch (error) {
       console.error("Error updating user wallet balance:", error);
-      return res.status(500).send("Error updating user wallet balance");// Added return statement here
+      return res.status(500).send("Error updating user wallet balance");
     }
   } else {
-    return res.json({received: true}); // Added return statement for consistency
+    return res.json({received: true});
   }
 });
 
+
 /**
  * Updates the user's wallet balance after a successful payment
- * @param {Object} paymentIntent - The Stripe PaymentIntent object
- * @param {string} userId - The unique identifier of the user
- * @returns {Promise<number>} The updated wallet balance
+ * @param {Object} session - The Stripe Checkout Session object
+ * @returns {Promise<void>} A Promise that resolves when the wallet balance is updated
  */
-async function updateUserWalletBalance(paymentIntent) {
-  const customerId = paymentIntent.customer;
-  const amount = paymentIntent.amount;
+async function updateUserWalletBalance(session) {
+  const customerId = session.customer;
+  const amount = session.amount_total;
 
   const userSnapshot = await admin.firestore().collection("users")
       .where("stripeCustomerId", "==", customerId).get();
