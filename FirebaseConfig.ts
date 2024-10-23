@@ -15,11 +15,6 @@ const firebaseConfig = {
   storageBucket: manifest?.extra?.firebaseStorageBucket,
   messagingSenderId: manifest?.extra?.firebaseMessagingSenderId,
   appId: manifest?.extra?.firebaseAppId,
-  functions: {
-    host: 'localhost',
-    port: 5001,
-    region: 'us-central1'
-  }
 };
 
 // Initialize Firebase

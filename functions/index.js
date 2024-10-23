@@ -59,7 +59,8 @@ exports.paymentIntentSucceeded = functions.https.onRequest(async (req, res) => {
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(req.rawBody, sig, endpointSecret);
+    event = stripe.webhooks.constructEvent(req.rawBody,
+        sig, endpointSecret);
   } catch (err) {
     console.error(`Webhook Error: ${err.message}`);
     return res.status(400).send(`Webhook Error: ${err.message}`);
@@ -69,15 +70,16 @@ exports.paymentIntentSucceeded = functions.https.onRequest(async (req, res) => {
     const paymentIntent = event.data.object;
     try {
       await updateUserWalletBalance(paymentIntent);
-      res.json({received: true});
+      return res.json({received: true});// Added return statement here
     } catch (error) {
       console.error("Error updating user wallet balance:", error);
-      res.status(500).send("Error updating user wallet balance");
+      return res.status(500).send("Error updating user wallet balance");// Added return statement here
     }
   } else {
-    res.json({received: true});
+    return res.json({received: true}); // Added return statement for consistency
   }
 });
+
 /**
  * Updates the user's wallet balance after a successful payment
  * @param {Object} paymentIntent - The Stripe PaymentIntent object
@@ -88,9 +90,9 @@ async function updateUserWalletBalance(paymentIntent) {
   const customerId = paymentIntent.customer;
   const amount = paymentIntent.amount;
 
-  // Query Firestore to get the user document with the matching Stripe customer ID
   const userSnapshot = await admin.firestore().collection("users")
       .where("stripeCustomerId", "==", customerId).get();
+
   if (userSnapshot.empty) {
     console.error("No matching user found for Stripe customer ID:", customerId);
     return;
@@ -99,11 +101,9 @@ async function updateUserWalletBalance(paymentIntent) {
   const userDoc = userSnapshot.docs[0];
   const userData = userDoc.data();
 
-  // Calculate new balance
   const currentBalance = userData.walletBalance || 0;
   const newBalance = currentBalance + amount;
 
-  // Update the user's wallet balance in Firestore
   await userDoc.ref.update({walletBalance: newBalance});
 
   console.log(`Updated wallet balance for user ${userDoc.id}: ${newBalance}`);
