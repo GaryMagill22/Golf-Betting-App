@@ -33,7 +33,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const stripePromise = loadStripe("pk_test_51NpbUBHJaZP62m3KKuApJPp7c67kL8vOpxwCr4ZDVxgDE1c01CpnNqSNbURSEzKnyGTOEtVLOV38NOq3pRDY29Px00WnKFvNsV");
     const stripe = useStripe();
     
-    const {initPaymentSheet, presentPaymentSheet} = useStripe();
+    // const {initPaymentSheet, presentPaymentSheet} = useStripe();
 
     const auth = getAuth();
     const db = getFirestore(FIREBASE_APP); // Initialize Firestore
