@@ -71,64 +71,64 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
 
 
 
-    useEffect(() => {
-        const fetchWalletBalance = async () => {
-            if (currentUser) {
-                try {
-                    // Fetch the wallet balance from Firestore
-                    const walletDocRef = doc(db, "users", currentUser.uid);
-                    const walletDocSnap = await getDoc(walletDocRef);
+    // useEffect(() => {
+    //     const fetchWalletBalance = async () => {
+    //         if (currentUser) {
+    //             try {
+    //                 // Fetch the wallet balance from Firestore
+    //                 const walletDocRef = doc(db, "users", currentUser.uid);
+    //                 const walletDocSnap = await getDoc(walletDocRef);
 
-                    if (walletDocSnap.exists()) {
-                        const walletData = walletDocSnap.data();
-                        setWalletBalance(walletData.walletBalance || 0); // Accessing walletBalance
-                        console.log('Wallet balance fetched successfully!');
-                    } else {
-                        console.log("No such document!");
-                    }
-                } catch (error) {
-                    console.error("Error fetching wallet balance:", error);
-                }
-            }
-        };
-        fetchWalletBalance();
-    }, [currentUser]);
+    //                 if (walletDocSnap.exists()) {
+    //                     const walletData = walletDocSnap.data();
+    //                     setWalletBalance(walletData.walletBalance || 0); // Accessing walletBalance
+    //                     console.log('Wallet balance fetched successfully!');
+    //                 } else {
+    //                     console.log("No such document!");
+    //                 }
+    //             } catch (error) {
+    //                 console.error("Error fetching wallet balance:", error);
+    //             }
+    //         }
+    //     };
+    //     fetchWalletBalance();
+    // }, [currentUser]);
 
-    const handleFundWallet = async () => {
-        try {
-            console.log("Calling fundWallet function...");
-            const fundWallet = httpsCallable(FIREBASE_FUNCTIONS, 'fundWallet');
-            const amountToFund = 1000; // Example: $10 (in cents) or get this from user input
-            const result = await fundWallet({ amount: amountToFund }) as { data: { sessionId: string } };
+    // const handleFundWallet = async () => {
+    //     try {
+    //         console.log("Calling fundWallet function...");
+    //         const fundWallet = httpsCallable(FIREBASE_FUNCTIONS, 'fundWallet');
+    //         const amountToFund = 1000; // Example: $10 (in cents) or get this from user input
+    //         const result = await fundWallet({ amount: amountToFund }) as { data: { sessionId: string } };
 
-            console.log("Result from fundWallet:", result);
+    //         console.log("Result from fundWallet:", result);
 
-            const sessionId = result.data?.sessionId;
+    //         const sessionId = result.data?.sessionId;
 
-            if (sessionId) {
-                console.log("Initiating Stripe Checkout...");
-                const stripe = await stripePromise;
-                if (!stripe) {
-                    console.error("Stripe.js has not loaded yet.");
-                    Alert.alert('Error', 'Stripe.js has not loaded yet.');
-                    return;
-                }
+    //         if (sessionId) {
+    //             console.log("Initiating Stripe Checkout...");
+    //             const stripe = await stripePromise;
+    //             if (!stripe) {
+    //                 console.error("Stripe.js has not loaded yet.");
+    //                 Alert.alert('Error', 'Stripe.js has not loaded yet.');
+    //                 return;
+    //             }
 
-                const { error } = await stripe.redirectToCheckout({ sessionId });
+    //             const { error } = await stripe.redirectToCheckout({ sessionId });
 
-                if (error) {
-                    console.error("Stripe redirect failed:", error);
-                    Alert.alert('Error', 'Failed to redirect to Stripe.');
-                }
-            } else {
-                console.error("No sessionId received");
-                Alert.alert('Error', 'Failed to initiate payment.');
-            }
-        } catch (error) {
-            console.error("Error funding wallet:", error);
-            Alert.alert('Error', 'Failed to fund wallet.');
-        }
-    };
+    //             if (error) {
+    //                 console.error("Stripe redirect failed:", error);
+    //                 Alert.alert('Error', 'Failed to redirect to Stripe.');
+    //             }
+    //         } else {
+    //             console.error("No sessionId received");
+    //             Alert.alert('Error', 'Failed to initiate payment.');
+    //         }
+    //     } catch (error) {
+    //         console.error("Error funding wallet:", error);
+    //         Alert.alert('Error', 'Failed to fund wallet.');
+    //     }
+    // };
     
     
 
@@ -227,7 +227,7 @@ return (
                                 <Text style={styles.balance}>${walletBalance / 100}</Text>
                             </View>
                             <View style={styles.fundContainer} >
-                                <Button style={styles.button} mode="elevated" onPress={handleFundWallet} >Deposit Funds</Button>
+                                <Button style={styles.button} mode="elevated" >Deposit Funds</Button>
                                 <Button style={styles.button} mode="elevated" >Withdraw Funds</Button>
                             </View>
                         </View>

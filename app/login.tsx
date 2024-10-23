@@ -49,40 +49,40 @@ const Page = () => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
-  
+
       if (user) {
         try {
           console.log("Data being sent to createCustomer:", {
             email: email,
             firebaseUID: user.uid,
           });
-  
+
           const createCustomer = httpsCallable(FIREBASE_FUNCTIONS, 'createCustomer');
           const result = await createCustomer({
             email: email,
             firebaseUID: user.uid,
           });
-  
+
           const data = result.data as { customerId: string };
           console.log("Stripe customer created:", data.customerId);
-  
+
           // Store user data along with customerId in Firestore
-          await setDoc(doc(db, "users", user.uid), {
+          await setDoc(doc(FIREBASE_DB, "users", user.uid), {
             email: email,
             firebaseUID: user.uid, // It's good practice to store this as well
-            stripeCustomerId: data.customerId, 
+            stripeCustomerId: data.customerId,
           });
-  
+
           // Successful signup and Stripe customer creation
           router.replace('/profile');
-  
+
         } catch (error: any) {
           console.error("Error creating Stripe customer:", error);
-  
+
           if (error.code === 'functions/invalid-argument') {
             Alert.alert('Error', 'Invalid data provided for customer creation.');
           } else if (error.details && error.details.message) {
-            Alert.alert('Error', error.details.message); 
+            Alert.alert('Error', error.details.message);
           } else {
             Alert.alert('Error', 'Failed to create your account. Please try again later.');
           }
