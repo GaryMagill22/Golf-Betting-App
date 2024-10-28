@@ -4,7 +4,7 @@ import { useLocalSearchParams } from 'expo-router'
 import { defaultStyles } from '../constants/Styles'
 import { FIREBASE_AUTH, FIREBASE_APP, FIREBASE_FUNCTIONS } from '../FirebaseConfig';
 import { httpsCallable } from 'firebase/functions'; // Import httpsCallable
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, UserCredential } from 'firebase/auth';
+import { createUserWithEmailAndPassword, deleteUser, signInWithEmailAndPassword, UserCredential } from 'firebase/auth';
 import { router } from 'expo-router';
 import { getFirestore, doc, setDoc } from 'firebase/firestore';
 
@@ -43,7 +43,6 @@ const Page = () => {
   };
 
 
-
   const signUp = async () => {
     setLoading(true);
     try {
@@ -67,7 +66,7 @@ const Page = () => {
           console.log("Stripe customer created:", data.customerId);
 
           // Store user data along with customerId in Firestore
-          await setDoc(doc(FIREBASE_DB, "users", user.uid), {
+          await setDoc(doc(db, "users", user.uid), {
             email: email,
             firebaseUID: user.uid, // It's good practice to store this as well
             stripeCustomerId: data.customerId,
@@ -95,6 +94,10 @@ const Page = () => {
       setLoading(false);
     }
   };
+
+
+
+
 
   return (
     <KeyboardAvoidingView

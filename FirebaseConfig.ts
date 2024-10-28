@@ -15,6 +15,7 @@ const firebaseConfig = {
   storageBucket: manifest?.extra?.firebaseStorageBucket,
   messagingSenderId: manifest?.extra?.firebaseMessagingSenderId,
   appId: manifest?.extra?.firebaseAppId,
+  
 };
 
 // Initialize Firebase
@@ -23,4 +24,4 @@ export const FIREBASE_AUTH = initializeAuth(FIREBASE_APP, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage)
 });
 export const FIREBASE_DB = getFirestore(FIREBASE_APP);
-export const FIREBASE_FUNCTIONS = getFunctions(FIREBASE_APP);
+export const FIREBASE_FUNCTIONS = getFunctions(FIREBASE_APP, 'us-central1');
