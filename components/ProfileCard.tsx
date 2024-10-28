@@ -8,7 +8,7 @@ import { ThemeProp } from 'react-native-paper/lib/typescript/types';
 import CardTitle from 'react-native-paper/lib/typescript/components/Card/CardTitle';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore'; // Import Firestore functions
-import { FIREBASE_APP, FIREBASE_FUNCTIONS, FIREBASE_DB } from '@/FirebaseConfig';
+import { FIREBASE_APP, FIREBASE_FUNCTIONS } from '@/FirebaseConfig';
 import { httpsCallable } from 'firebase/functions';
 import { useStripe } from '@stripe/stripe-react-native';
 
