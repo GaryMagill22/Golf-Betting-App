@@ -21,3 +21,45 @@ exports.createStripeCustomer = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("internal", "Failed to create customer");
   }
 });
+
+exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
+  const {amount} = data;
+  const userId = context.auth.uid;
+
+  const paymentIntent = await stripe.paymentIntents.create({
+    amount,
+    currency: "usd",
+    customer: userId,
+    metadata: {userId},
+  });
+
+  return {
+    clientSecret: paymentIntent.client_secret,
+  };
+});
+
+// THIS FUNCTION IS ALREADY DEPLOYED BUT NOT USED
+// exports.createStripeCheckoutSession = functions.https.onCall(async (data, context) => {
+//   const {amount} = data;
+//   const userId = context.auth.uid;
+
+//   const session = await stripe.checkout.sessions.create({
+//     payment_method_types: ["card"],
+//     line_items: [{
+//       price_data: {
+//         currency: "usd",
+//         product_data: {
+//           name: "Wallet Deposit",
+//         },
+//         unit_amount: amount,
+//       },
+//       quantity: 1,
+//     }],
+//     mode: "payment",
+//     success_url: "https://yourapp.com/success",
+//     cancel_url: "https://yourapp.com/cancel",
+//     client_reference_id: userId,
+//   });
+
+//   return {sessionId: session.id};
+// });
