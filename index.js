@@ -1,6 +1,8 @@
 import { registerRootComponent } from 'expo';
 import React from 'react';
-import {StripeProvider} from '@stripe/stripe-react-native';
+import { StripeProvider } from '@stripe/stripe-react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
@@ -10,7 +12,9 @@ import App from './App';
 const publishableKey = "pk_test_51QAvfOLZgHn4BjmwLz4sfVoidoK8lNugRUXxIvKkEc9fa8VuhV3Z7IJqwqtHpAHNvVKC6Erbzq7ZH1PGecSjzkUi00CqulYlUD";
 
 registerRootComponent(() => (
-    <StripeProvider publishableKey={publishableKey}>
-    <App />
-    </StripeProvider>
+    <SafeAreaProvider>
+        <StripeProvider publishableKey={publishableKey}>
+            <App />
+        </StripeProvider>
+    </SafeAreaProvider>
 ));

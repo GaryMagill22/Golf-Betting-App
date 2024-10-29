@@ -34,7 +34,9 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
   });
 
   return {
-    clientSecret: paymentIntent.client_secret,
+    paymentIntent: {
+      clientSecret: paymentIntent.client_secret,
+    },
   };
 });
 
