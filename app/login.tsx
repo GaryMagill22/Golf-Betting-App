@@ -46,8 +46,6 @@ const Page = () => {
 
   const signUp = async () => {
     setLoading(true);
-
-
     try {
       // First, create the Firebase user
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
