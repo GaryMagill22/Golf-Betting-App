@@ -3,19 +3,16 @@ import { initializeAuth, getReactNativePersistence } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
 
 
-const { manifest } = Constants as any;
 
 const firebaseConfig = {
-  apiKey: manifest?.extra?.firebaseApiKey,
-  authDomain: manifest?.extra?.firebaseAuthDomain,
-  projectId: manifest?.extra?.firebaseProjectId,
-  storageBucket: manifest?.extra?.firebaseStorageBucket,
-  messagingSenderId: manifest?.extra?.firebaseMessagingSenderId,
-  appId: manifest?.extra?.firebaseAppId,
-  
+  apiKey: "AIzaSyBlxvlcTeZ4GVywmVbFdn6r1AWySEkgBco",
+  authDomain: "reactnativegolfapp.firebaseapp.com",
+  projectId: "reactnativegolfapp",
+  storageBucket: "reactnativegolfapp.appspot.com",
+  messagingSenderId: "466683770848",
+  appId: "1:466683770848:web:91cc0133b6286202235d85"
 };
 
 // Initialize Firebase

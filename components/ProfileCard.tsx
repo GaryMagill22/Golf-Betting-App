@@ -30,7 +30,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const [isEditing, setIsEditing] = useState(false); // State to track edit mode
     const [isLoading, setIsLoading] = useState(false); // State for loading indicator
     const [walletBalance, setWalletBalance] = useState(0);
-    const stripePromise = loadStripe("pk_test_51NpbUBHJaZP62m3KKuApJPp7c67kL8vOpxwCr4ZDVxgDE1c01CpnNqSNbURSEzKnyGTOEtVLOV38NOq3pRDY29Px00WnKFvNsV");
+    const stripePromise = loadStripe("pk_test_51QAvfOLZgHn4BjmwLz4sfVoidoK8lNugRUXxIvKkEc9fa8VuhV3Z7IJqwqtHpAHNvVKC6Erbzq7ZH1PGecSjzkUi00CqulYlUD");
     const stripe = useStripe();
     
     // const {initPaymentSheet, presentPaymentSheet} = useStripe();
@@ -71,28 +71,28 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
 
 
 
-    // useEffect(() => {
-    //     const fetchWalletBalance = async () => {
-    //         if (currentUser) {
-    //             try {
-    //                 // Fetch the wallet balance from Firestore
-    //                 const walletDocRef = doc(db, "users", currentUser.uid);
-    //                 const walletDocSnap = await getDoc(walletDocRef);
+    useEffect(() => {
+        const fetchWalletBalance = async () => {
+            if (currentUser) {
+                try {
+                    // Fetch the wallet balance from Firestore
+                    const walletDocRef = doc(db, "users", currentUser.uid);
+                    const walletDocSnap = await getDoc(walletDocRef);
 
-    //                 if (walletDocSnap.exists()) {
-    //                     const walletData = walletDocSnap.data();
-    //                     setWalletBalance(walletData.walletBalance || 0); // Accessing walletBalance
-    //                     console.log('Wallet balance fetched successfully!');
-    //                 } else {
-    //                     console.log("No such document!");
-    //                 }
-    //             } catch (error) {
-    //                 console.error("Error fetching wallet balance:", error);
-    //             }
-    //         }
-    //     };
-    //     fetchWalletBalance();
-    // }, [currentUser]);
+                    if (walletDocSnap.exists()) {
+                        const walletData = walletDocSnap.data();
+                        setWalletBalance(walletData.walletBalance || 0); // Accessing walletBalance
+                        console.log('Wallet balance fetched successfully!');
+                    } else {
+                        console.log("No such document!");
+                    }
+                } catch (error) {
+                    console.error("Error fetching wallet balance:", error);
+                }
+            }
+        };
+        fetchWalletBalance();
+    }, [currentUser]);
 
     // const handleFundWallet = async () => {
     //     try {

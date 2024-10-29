@@ -77,3 +77,6 @@ yarn-error.*
 
 expo-env.d.ts
 # @end expo-cli
+
+# Config
+FirebaseConfig.ts
