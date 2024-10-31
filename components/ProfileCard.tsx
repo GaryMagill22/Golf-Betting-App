@@ -1,20 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleProp, ViewProps, ViewStyle, ScrollView, Alert } from 'react-native';
-import { StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Avatar, Button, Card, TextInput } from 'react-native-paper';
 import { getAuth, updateProfile, User, signOut } from 'firebase/auth';
-import { IconSource } from 'react-native-paper/lib/typescript/components/Icon';
-import { ThemeProp } from 'react-native-paper/lib/typescript/types';
-import CardTitle from 'react-native-paper/lib/typescript/components/Card/CardTitle';
-import { TouchableOpacity } from 'react-native-gesture-handler';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore'; // Import Firestore functions
-import { FIREBASE_APP, FIREBASE_FUNCTIONS, FIREBASE_DB } from '@/FirebaseConfig';
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 import { useStripe } from '@stripe/stripe-react-native';
-import { loadStripe } from '@stripe/stripe-js';
-
-
-
+import DepositScreen from './DepositScreen';
+import { FIREBASE_APP } from '@/FirebaseConfig';
 
 interface ProfileCardProps {
     user?: User | null;
@@ -29,38 +21,32 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const [homeCourse, setHomeCourse] = useState(''); // Initialize home course
     const [isEditing, setIsEditing] = useState(false); // State to track edit mode
     const [isLoading, setIsLoading] = useState(false); // State for loading indicator
+    const [showDepositScreen, setShowDepositScreen] = useState(false);
     const [walletBalance, setWalletBalance] = useState(0);
-    const stripePromise = loadStripe("pk_test_51QAvfOLZgHn4BjmwLz4sfVoidoK8lNugRUXxIvKkEc9fa8VuhV3Z7IJqwqtHpAHNvVKC6Erbzq7ZH1PGecSjzkUi00CqulYlUD");
-    const stripe = useStripe();
-    
-    // const {initPaymentSheet, presentPaymentSheet} = useStripe();
 
     const auth = getAuth();
     const db = getFirestore(FIREBASE_APP); // Initialize Firestore
-
-    const FIREBASE_FUNCTIONS = getFunctions(FIREBASE_APP, 'us-central1');
+    const functions = getFunctions(FIREBASE_APP, 'us-central1');
 
     useEffect(() => {
         const fetchUserData = async () => {
             if (currentUser) {
                 try {
-                    const userDocRef = doc(db, "users", currentUser.uid);
+                    const userDocRef = doc(db, 'users', currentUser.uid);
                     const userDocSnap = await getDoc(userDocRef);
 
                     if (userDocSnap.exists()) {
-                        const
-                            userData = userDocSnap.data();
-                        setFirstName(userData.firstName
-                            || '');
+                        const userData = userDocSnap.data();
+                        setFirstName(userData.firstName || '');
                         setLastName(userData.lastName || '');
                         setUsername(userData.username || currentUser.displayName || '');
                         setHandicap(userData.handicap || 40);
                         setHomeCourse(userData.homeCourse || '');
                     } else {
-                        console.log("No such document!");
+                        console.log('No such document!');
                     }
                 } catch (error) {
-                    console.error("Error fetching user data:", error);
+                    console.error('Error fetching user data:', error);
                 }
             }
         };
@@ -68,15 +54,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
         fetchUserData();
     }, [currentUser]);
 
-
-
-
     useEffect(() => {
         const fetchWalletBalance = async () => {
             if (currentUser) {
                 try {
                     // Fetch the wallet balance from Firestore
-                    const walletDocRef = doc(db, "users", currentUser.uid);
+                    const walletDocRef = doc(db, 'users', currentUser.uid);
                     const walletDocSnap = await getDoc(walletDocRef);
 
                     if (walletDocSnap.exists()) {
@@ -84,174 +67,119 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                         setWalletBalance(walletData.walletBalance || 0); // Accessing walletBalance
                         console.log('Wallet balance fetched successfully!');
                     } else {
-                        console.log("No such document!");
+                        console.log('No such document!');
                     }
                 } catch (error) {
-                    console.error("Error fetching wallet balance:", error);
+                    console.error('Error fetching wallet balance:', error);
                 }
             }
         };
         fetchWalletBalance();
     }, [currentUser]);
 
-    // const handleFundWallet = async () => {
-    //     try {
-    //         console.log("Calling fundWallet function...");
-    //         const fundWallet = httpsCallable(FIREBASE_FUNCTIONS, 'fundWallet');
-    //         const amountToFund = 1000; // Example: $10 (in cents) or get this from user input
-    //         const result = await fundWallet({ amount: amountToFund }) as { data: { sessionId: string } };
+    const saveProfile = async () => {
+        setIsLoading(true);
+        try {
+            const currentUser = getAuth().currentUser;
+            if (currentUser) {
+                // Update the displayName in Firebase Authentication
+                await updateProfile(currentUser, { displayName: username });
 
-    //         console.log("Result from fundWallet:", result);
+                // Update profile data in Firestore
+                await updateDoc(doc(db, 'users', currentUser.uid), {
+                    firstName: firstName,
+                    lastName: lastName,
+                    username: username,
+                    handicap: handicap,
+                    homeCourse: homeCourse,
+                });
 
-    //         const sessionId = result.data?.sessionId;
-
-    //         if (sessionId) {
-    //             console.log("Initiating Stripe Checkout...");
-    //             const stripe = await stripePromise;
-    //             if (!stripe) {
-    //                 console.error("Stripe.js has not loaded yet.");
-    //                 Alert.alert('Error', 'Stripe.js has not loaded yet.');
-    //                 return;
-    //             }
-
-    //             const { error } = await stripe.redirectToCheckout({ sessionId });
-
-    //             if (error) {
-    //                 console.error("Stripe redirect failed:", error);
-    //                 Alert.alert('Error', 'Failed to redirect to Stripe.');
-    //             }
-    //         } else {
-    //             console.error("No sessionId received");
-    //             Alert.alert('Error', 'Failed to initiate payment.');
-    //         }
-    //     } catch (error) {
-    //         console.error("Error funding wallet:", error);
-    //         Alert.alert('Error', 'Failed to fund wallet.');
-    //     }
-    // };
-    
-    
-
-
-
-
-const saveProfile = async () => {
-    setIsLoading(true);
-    try {
-        const currentUser = getAuth().currentUser;
-        if (currentUser) {
-            // Update the displayName in Firebase Authentication
-            await updateProfile(currentUser, { displayName: username });
-
-            //  Update profile data in Firestore
-            await updateDoc(doc(db, "users", currentUser.uid), {
-                firstName: firstName,
-                lastName: lastName,
-                username: username,
-                handicap: handicap,
-                homeCourse: homeCourse,
-            });
-
-            console.log('Profile updated successfully!');
-            setIsEditing(false);
-        } else {
-            console.error('No current user to update');
+                console.log('Profile updated successfully!');
+                setIsEditing(false);
+            } else {
+                console.error('No current user to update');
+            }
+        } catch (error) {
+            console.error('Error updating profile:', error);
+        } finally {
+            setIsLoading(false);
         }
-    } catch (error) {
-        console.error('Error updating profile:', error);
-    } finally {
-        setIsLoading(false);
-    }
-};
+    };
 
-const handleSignOut = async () => {
-    try {
-        await signOut(auth);
-        console.log('User signed out successfully!');
-    } catch (error: any) {
-        console.error('Error signing out:', error);
-    }
-};
+    const handleDepositSuccess = (amount: number) => {
+        setWalletBalance(prevBalance => prevBalance + amount);
+        setShowDepositScreen(false);
+    };
 
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+            console.log('User signed out successfully!');
+        } catch (error: any) {
+            console.error('Error signing out:', error);
+        }
+    };
 
-
-
-return (
-    <ScrollView>
-        <View style={styles.container}>
-            <Card style={styles.card}>
-                <Avatar.Image style={styles.AvatarImage} size={80} source={require('../assets/images/avatar-circle.png')} />
-                <Card.Title title={currentUser?.displayName || 'Unknown Username'} titleStyle={styles.cardTitle}
-                />
-                <Text style={styles.profileText}>{currentUser?.email || 'Unknown Email'}</Text>
-                <Text style={styles.profileText}>Handicap: {handicap}</Text>
-                <Card.Content style={styles.cardContent}>
-                    {isEditing ? (
-                        <ScrollView style={styles.scrollView}>
-                            <TextInput
-                                label="First Name"
-                                value={firstName}
-                                onChangeText={setFirstName}
-                            // placeholder="First Name"
-                            />
-                            <TextInput
-                                label="Last Name"
-                                value={lastName}
-                                onChangeText={setLastName}
-                            // placeholder="Last Name"
-                            />
-                            <TextInput
-                                label="Username"
-                                value={username}
-                                onChangeText={setUsername}
-                            // placeholder="Username"
-                            />
-                            <TextInput
-                                label="Handicap"
-                                value={handicap.toString()}
-                                onChangeText={(text) => setHandicap(Number(text))}
-                                // placeholder="Enter Handicap"
-                                keyboardType="numeric"
-                            />
-                            <TextInput
-                                label="Home Course"
-                                value={homeCourse}
-                                onChangeText={setHomeCourse}
-                            // placeholder="Enter Handicap"
-                            />
-                        </ScrollView>
-                    ) : (
-                        <View >
-                            <View style={styles.walletContainer}>
-                                <Text style={styles.title}>Wallet Balance: </Text>
-                                <Text style={styles.balance}>${walletBalance / 100}</Text>
+    return (
+        <ScrollView>
+            <View style={styles.container}>
+                <Card style={styles.card}>
+                    <Avatar.Image style={styles.AvatarImage} size={80} source={require('../assets/images/avatar-circle.png')} />
+                    <Card.Title title={currentUser?.displayName || 'Unknown Username'} titleStyle={styles.cardTitle} />
+                    <Text style={styles.profileText}>{currentUser?.email || 'Unknown Email'}</Text>
+                    <Text style={styles.profileText}>Handicap: {handicap}</Text>
+                    <Card.Content style={styles.cardContent}>
+                        {isEditing ? (
+                            <ScrollView style={styles.scrollView}>
+                                <TextInput label="First Name" value={firstName} onChangeText={setFirstName} />
+                                <TextInput label="Last Name" value={lastName} onChangeText={setLastName} />
+                                <TextInput label="Username" value={username} onChangeText={setUsername} />
+                                <TextInput
+                                    label="Handicap"
+                                    value={handicap.toString()}
+                                    onChangeText={(text) => setHandicap(Number(text))}
+                                    keyboardType="numeric"
+                                />
+                                <TextInput label="Home Course" value={homeCourse} onChangeText={setHomeCourse} />
+                            </ScrollView>
+                        ) : (
+                            <View>
+                                <View style={styles.walletContainer}>
+                                    <Text style={styles.title}>Wallet Balance: </Text>
+                                    <Text style={styles.balance}>${walletBalance}</Text>
+                                </View>
+                                <View style={styles.fundContainer}>
+                                    <Button onPress={() => setShowDepositScreen(true)} style={styles.button} mode="elevated">
+                                        Deposit Funds
+                                    </Button>
+                                    {showDepositScreen && (
+                                        <DepositScreen
+                                            onClose={() => setShowDepositScreen(false)}
+                                            onSuccess={handleDepositSuccess}
+                                        />
+                                    )}
+                                </View>
                             </View>
-                            <View style={styles.fundContainer} >
-                                <Button style={styles.button} mode="elevated" >Deposit Funds</Button>
-                                <Button style={styles.button} mode="elevated" >Withdraw Funds</Button>
-                            </View>
-                        </View>
-                    )}
-                </Card.Content>
-                <Card.Actions style={styles.actionContainer}>
-                    {isEditing ? (
-                        <Button style={styles.editButton} mode="outlined" onPress={saveProfile} disabled={isLoading}>
-                            {isLoading ? 'Saving...' : 'Save Profile'}
-                        </Button>
-                    ) : (
-                        <Button style={styles.editButton} mode="outlined" onPress={() => setIsEditing(true)}>
-                            Edit Profile
-                        </Button>
-                    )}
-                </Card.Actions>
-                <Button style={styles.signoutButton} mode="outlined" onPress={handleSignOut}>
-                    <Text>Sign Out</Text>
-                </Button>
-            </Card>
-
-        </View>
-    </ScrollView>
-);
+                        )}
+                    </Card.Content>
+                    <Card.Actions style={styles.actionContainer}>
+                        {isEditing ? (
+                            <Button style={styles.editButton} mode="outlined" onPress={saveProfile} disabled={isLoading}>
+                                {isLoading ? 'Saving...' : 'Save Profile'}
+                            </Button>
+                        ) : (
+                            <Button style={styles.editButton} mode="outlined" onPress={() => setIsEditing(true)}>
+                                Edit Profile
+                            </Button>
+                        )}
+                    </Card.Actions>
+                    <Button style={styles.signoutButton} mode="outlined" onPress={handleSignOut}>
+                        <Text>Sign Out</Text>
+                    </Button>
+                </Card>
+            </View>
+        </ScrollView>
+    );
 };
 
 export default ProfileCard;
@@ -352,6 +280,4 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
     },
-
 });
-

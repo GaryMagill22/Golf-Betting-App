@@ -2,6 +2,7 @@ import { registerRootComponent } from 'expo';
 import React from 'react';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider } from './context/AuthContext';
 
 import App from './App';
 
@@ -13,8 +14,10 @@ const publishableKey = "pk_test_51QAvfOLZgHn4BjmwLz4sfVoidoK8lNugRUXxIvKkEc9fa8V
 
 registerRootComponent(() => (
     <SafeAreaProvider>
-        <StripeProvider publishableKey={publishableKey}>
-            <App />
+        <StripeProvider publishableKey={publishableKey} urlScheme="myapp">
+            <AuthProvider>
+                <App />
+            </AuthProvider>
         </StripeProvider>
     </SafeAreaProvider>
 ));
