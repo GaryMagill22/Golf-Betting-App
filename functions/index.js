@@ -1,10 +1,36 @@
 require("dotenv").config();
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const stripe = require("stripe")(process.env.STRIPE_RESTRICTED_KEY);
 
 
 admin.initializeApp();
+const db = admin.firestore();
+
+const getUserData = functions.https.onCall(async (data, context) => {
+  const userId = context.auth.uid;
+
+  if (!userId) {
+    throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
+  }
+
+  try {
+    const userDocRef = db.collection("users").doc(userId);
+    const userDoc = await userDocRef.get();
+
+    if (!userDoc.exists) {
+      throw new functions.https.HttpsError("not-found", "User document not found.");
+    }
+
+    const userData = userDoc.data();
+    return {userData};
+  } catch (error) {
+    console.error("Error fetching user data:", error);
+    throw new functions.https.HttpsError("internal", "Unable to fetch user data");
+  }
+});
+
+exports.getUserData = getUserData;
 
 exports.createStripeCustomer = functions.https.onCall(async (data, context) => {
   try {
@@ -22,47 +48,52 @@ exports.createStripeCustomer = functions.https.onCall(async (data, context) => {
   }
 });
 
-exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
-  const userId = data.userId;
-  const amount = data.amount;
 
-  console.log("User ID:", userId);
-  console.log("Amount:", amount);
+exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
+  const {amount} = data;
 
   try {
-    // Retrieve the user record from Firebase Auth
-    const userRecord = await admin.auth().getUser(userId);
-    console.log("User Record:", userRecord);
+    console.log("Amount received:", amount);
 
-    // Assuming you've stored the Stripe customer ID in Firebase Auth custom claims
-    const stripeCustomerId = userRecord.customClaims.stripeCustomerId;
-    console.log("Stripe Customer ID:", stripeCustomerId);
+    const userDataResult = await getUserData(null, context);
+    console.log("User data result:", userDataResult);
+    const userData = userDataResult.data.userData;
 
-    if (!stripeCustomerId) {
-      throw new functions.https.HttpsError(
-          "failed-precondition",
-          "The user does not have a Stripe customer ID.",
-      );
-    }
+    const stripeCustomerId = userData.stripeCustomerId;
+    console.log("Stripe customer ID:", stripeCustomerId);
+
+    console.log("Stripe restricted key:", process.env.STRIPE_RESTRICTED_KEY);
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount,
+      amount: amount * 100,
       currency: "usd",
       customer: stripeCustomerId,
-      metadata: {userId},
+      metadata: {firebaseUID: context.auth.uid},
+      automatic_payment_methods: {enabled: true},
     });
 
     console.log("PaymentIntent created:", paymentIntent);
+
     return {
-      paymentIntent: {
-        clientSecret: paymentIntent.client_secret,
-      },
+      clientSecret: paymentIntent.client_secret,
     };
   } catch (error) {
     console.error("Error creating payment intent:", error);
-    throw new functions.https.HttpsError("internal", "Unable to create payment intent");
+    if (error.code === "unauthenticated") {
+      throw new functions.https.HttpsError(
+          "unauthenticated",
+          "The function must be called while authenticated.",
+          error.stack,
+      );
+    } else {
+      throw new functions.https.HttpsError(
+          "internal",
+          "Unable to create payment intent: " + error.message,
+      );
+    }
   }
 });
+
 
 // THIS FUNCTION IS ALREADY DEPLOYED BUT NOT USED
 exports.createStripeCheckoutSession = functions.https.onCall(async (data, context) => {

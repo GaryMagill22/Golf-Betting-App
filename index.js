@@ -14,7 +14,10 @@ const publishableKey = "pk_test_51QAvfOLZgHn4BjmwLz4sfVoidoK8lNugRUXxIvKkEc9fa8V
 
 registerRootComponent(() => (
     <SafeAreaProvider>
-        <StripeProvider publishableKey={publishableKey} urlScheme="myapp">
+        <StripeProvider publishableKey={publishableKey} 
+        urlScheme="myapp" 
+        merchantIdentifier="your_merchant_identifier" 
+        >
             <AuthProvider>
                 <App />
             </AuthProvider>

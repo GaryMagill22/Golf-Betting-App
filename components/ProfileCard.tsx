@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Avatar, Button, Card, TextInput } from 'react-native-paper';
-import { getAuth, updateProfile, User, signOut } from 'firebase/auth';
+import { getAuth, updateProfile, User, signOut, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 import { useStripe } from '@stripe/stripe-react-native';
@@ -13,7 +13,9 @@ interface ProfileCardProps {
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
-    const currentUser = getAuth().currentUser; // Get the logged-in user
+    // const currentUser = getAuth().currentUser; // Get the logged-in user
+    const [currentUser, setCurrentUser] = useState<User | null>(null);
+
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [username, setUsername] = useState(currentUser?.displayName || ''); // Initialize username
@@ -27,6 +29,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const auth = getAuth();
     const db = getFirestore(FIREBASE_APP); // Initialize Firestore
     const functions = getFunctions(FIREBASE_APP, 'us-central1');
+
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            setCurrentUser(user);
+        });
+
+        return () => unsubscribe();
+    }, [auth]);
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -52,6 +63,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
         };
 
         fetchUserData();
+        console.log("Fetching user data - Current User ID: " + currentUser?.uid);
     }, [currentUser]);
 
     useEffect(() => {
@@ -77,15 +89,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
         fetchWalletBalance();
     }, [currentUser]);
 
+
     const saveProfile = async () => {
         setIsLoading(true);
         try {
-            const currentUser = getAuth().currentUser;
             if (currentUser) {
-                // Update the displayName in Firebase Authentication
                 await updateProfile(currentUser, { displayName: username });
 
-                // Update profile data in Firestore
                 await updateDoc(doc(db, 'users', currentUser.uid), {
                     firstName: firstName,
                     lastName: lastName,
@@ -101,13 +111,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
             }
         } catch (error) {
             console.error('Error updating profile:', error);
-        } finally {
-            setIsLoading(false);
         }
+        setIsLoading(false);
     };
+    
 
     const handleDepositSuccess = (amount: number) => {
         setWalletBalance(prevBalance => prevBalance + amount);
+        console.log(`Successfully deposited ${amount} into wallet!`);
         setShowDepositScreen(false);
     };
 
@@ -149,7 +160,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                                     <Text style={styles.balance}>${walletBalance}</Text>
                                 </View>
                                 <View style={styles.fundContainer}>
-                                    <Button onPress={() => setShowDepositScreen(true)} style={styles.button} mode="elevated">
+                                    <Button onPress={() => setShowDepositScreen(true)} style={styles.button} >
                                         Deposit Funds
                                     </Button>
                                     {showDepositScreen && (
