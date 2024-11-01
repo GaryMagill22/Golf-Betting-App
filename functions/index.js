@@ -54,8 +54,10 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
 
   try {
     console.log("Amount received:", amount);
+    console.log("Context object in createPaymentIntent:", context);
 
-    const userDataResult = await getUserData(null, context);
+    // sending empty object as first argument to getUserData function
+    const userDataResult = await getUserData({}, context);
     console.log("User data result:", userDataResult);
     const userData = userDataResult.data.userData;
 
