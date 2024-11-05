@@ -7,6 +7,8 @@ import { getFunctions } from 'firebase/functions';
 import { useStripe } from '@stripe/stripe-react-native';
 import DepositScreen from './DepositScreen';
 import { FIREBASE_APP } from '@/FirebaseConfig';
+import { httpsCallable } from 'firebase/functions';
+import { FIREBASE_FUNCTIONS } from '../FirebaseConfig';
 
 interface ProfileCardProps {
     user?: User | null;
@@ -28,23 +30,22 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const db = getFirestore(FIREBASE_APP); // Initialize Firestore
     const functions = getFunctions(FIREBASE_APP, 'us-central1');
 
+
+
     useEffect(() => {
         const fetchUserData = async () => {
-            if (currentUser) {
+            if (auth.currentUser) {
                 try {
-                    const userDocRef = doc(db, 'users', currentUser.uid);
-                    const userDocSnap = await getDoc(userDocRef);
+                    const getUserData = httpsCallable(FIREBASE_FUNCTIONS, 'getUserData');
+                    const { data } = await getUserData({}); // Call the function with an empty object
 
-                    if (userDocSnap.exists()) {
-                        const userData = userDocSnap.data();
+                    // Assuming your function returns { userData: { /* user data */ } }
+                    const userData = (data as { userData: any }).userData;
                         setFirstName(userData.firstName || '');
                         setLastName(userData.lastName || '');
-                        setUsername(userData.username || currentUser.displayName || '');
+                        setUsername(userData.username || (user ? user.displayName : '') || '');
                         setHandicap(userData.handicap || 40);
                         setHomeCourse(userData.homeCourse || '');
-                    } else {
-                        console.log('No such document!');
-                    }
                 } catch (error) {
                     console.error('Error fetching user data:', error);
                 }
@@ -52,7 +53,36 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
         };
 
         fetchUserData();
-    }, [currentUser]);
+    }, [auth.currentUser]);
+
+
+
+    // OLD WAY OF USING USEEFFECT WITH OWN FUNCTION
+    // useEffect(() => {
+    //     const fetchUserData = async () => {
+    //         if (currentUser) {
+    //             try {
+    //                 const userDocRef = doc(db, 'users', currentUser.uid);
+    //                 const userDocSnap = await getDoc(userDocRef);
+
+    //                 if (userDocSnap.exists()) {
+    //                     const userData = userDocSnap.data();
+    //                     setFirstName(userData.firstName || '');
+    //                     setLastName(userData.lastName || '');
+    //                     setUsername(userData.username || currentUser.displayName || '');
+    //                     setHandicap(userData.handicap || 40);
+    //                     setHomeCourse(userData.homeCourse || '');
+    //                 } else {
+    //                     console.log('No such document!');
+    //                 }
+    //             } catch (error) {
+    //                 console.error('Error fetching user data:', error);
+    //             }
+    //         }
+    //     };
+
+    //     fetchUserData();
+    // }, [currentUser]);
 
     useEffect(() => {
         const fetchWalletBalance = async () => {
