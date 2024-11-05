@@ -32,32 +32,17 @@ const getUserData = functions.https.onCall(async (data, context) => {
 
 exports.getUserData = getUserData;
 
-exports.createStripeCustomer = functions.https.onCall(async (data, context) => {
-  try {
-    const {email, firebaseUID} = data;
-
-    const customer = await stripe.customers.create({
-      email,
-      metadata: {firebaseUID},
-    });
-
-    return {customerId: customer.id};
-  } catch (error) {
-    console.error("Error creating Stripe customer:", error);
-    throw new functions.https.HttpsError("internal", "Failed to create customer");
-  }
-});
-
-
 exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
   const {amount} = data;
 
   try {
     console.log("Amount received:", amount);
-    console.log("Context object in createPaymentIntent:", context);
+    console.log("Context object in createPaymentIntent:", context.auth.uid);
 
     // sending empty object as first argument to getUserData function
+    console.log("Context object BEFORE getUserData:", context);
     const userDataResult = await getUserData({}, context);
+    console.log("Context object AFTER getUserData:", context);
     console.log("User data result:", userDataResult);
     const userData = userDataResult.data.userData;
 
@@ -75,7 +60,6 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
     });
 
     console.log("PaymentIntent created:", paymentIntent);
-
     return {
       clientSecret: paymentIntent.client_secret,
     };
@@ -96,6 +80,21 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
   }
 });
 
+exports.createStripeCustomer = functions.https.onCall(async (data, context) => {
+  try {
+    const {email, firebaseUID} = data;
+
+    const customer = await stripe.customers.create({
+      email,
+      metadata: {firebaseUID},
+    });
+
+    return {customerId: customer.id};
+  } catch (error) {
+    console.error("Error creating Stripe customer:", error);
+    throw new functions.https.HttpsError("internal", "Failed to create customer");
+  }
+});
 
 // THIS FUNCTION IS ALREADY DEPLOYED BUT NOT USED
 exports.createStripeCheckoutSession = functions.https.onCall(async (data, context) => {
@@ -119,6 +118,7 @@ exports.createStripeCheckoutSession = functions.https.onCall(async (data, contex
     cancel_url: "https://yourapp.com/cancel",
     client_reference_id: userId,
   });
-
   return {sessionId: session.id};
 });
+
+
