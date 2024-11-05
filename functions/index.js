@@ -23,6 +23,7 @@ const getUserData = functions.https.onCall(async (data, context) => {
     }
 
     const userData = userDoc.data();
+    console.log("User data fetched successfully: ", userData);
     return {userData};
   } catch (error) {
     console.error("Error fetching user data:", error);
@@ -33,15 +34,20 @@ const getUserData = functions.https.onCall(async (data, context) => {
 exports.getUserData = getUserData;
 
 exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
-  const {amount} = data;
+  // Access the amount from data.body.data
+  const amount = data.body.data.data;
+
+  // Keep console.log statements for debugging
+  console.log("Data object in createPaymentIntent:", data);
+  console.log("Data.Body:", data.body);
+  console.log("Raw request:", JSON.stringify(data.rawRequest));
+  console.log("Amount received:", amount);
+  console.log("Context object in createPaymentIntent:", context);
 
   try {
-    console.log("Amount received:", amount);
-    console.log("Context object in createPaymentIntent:", context.auth.uid);
-
-    // sending empty object as first argument to getUserData function
+    // Ensure context is passed correctly to getUserData
     console.log("Context object BEFORE getUserData:", context);
-    const userDataResult = await getUserData({}, context);
+    const userDataResult = await getUserData(data, context);
     console.log("Context object AFTER getUserData:", context);
     console.log("User data result:", userDataResult);
     const userData = userDataResult.data.userData;
@@ -52,7 +58,7 @@ exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
     console.log("Stripe restricted key:", process.env.STRIPE_RESTRICTED_KEY);
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount * 100,
+      amount: amount,
       currency: "usd",
       customer: stripeCustomerId,
       metadata: {firebaseUID: context.auth.uid},

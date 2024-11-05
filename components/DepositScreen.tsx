@@ -1,10 +1,14 @@
 import { httpsCallable } from 'firebase/functions';
-import { FIREBASE_FUNCTIONS } from '../FirebaseConfig'; // Adjust the path as needed
+
+import { FIREBASE_FUNCTIONS } from '../FirebaseConfig';
 import { useStripe } from '@stripe/stripe-react-native';
 import React, { useState } from 'react';
-import { Alert, View, TextInput, Button, Modal, StyleSheet } from 'react-native';
-import { useAuth } from '../context/AuthContext'; // Adjust the path as needed
+import { Alert, View, TextInput, Button, Modal, StyleSheet, ActivityIndicator } from 'react-native';
+import { useAuth } from '../context/AuthContext';
 
+interface CreatePaymentIntentData {
+    data: number;
+}
 interface PaymentIntentResponse {
     paymentIntent: {
         clientSecret: string;
@@ -18,62 +22,73 @@ interface DepositScreenProps {
 
 const DepositScreen: React.FC<DepositScreenProps> = ({ onClose, onSuccess }) => {
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
-    const [amount, setAmount] = useState(0);
-    const { user, loading } = useAuth(); // Use the Auth context
+    const [amount, setAmount] = useState("");
+    const { user, loading } = useAuth();
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleDeposit = async () => {
         console.log("handleDeposit called");
 
         if (loading) {
             console.log("Auth state is still loading");
-            return; // Wait until the auth state is resolved
+            return;
         }
 
         if (!user) {
-            Alert.alert('Error', 'You must be logged in to make a deposit.');
+            Alert.alert("Error", "You must be logged in to make a deposit.");
             onClose();
             return;
         }
 
+        // Validate amount
+        const amountNumber = parseFloat(amount);
+        if (isNaN(amountNumber) || amountNumber <= 0) {
+            Alert.alert("Error", "Please enter a valid deposit amount.");
+            return;
+        }
+
+        setIsLoading(true);
+
         try {
-            console.log("Calling createPaymentIntent function with amount:", amount);
+            console.log(
+                "Calling createPaymentIntent function with amount:",
+                amountNumber
+            );
 
-            // Call your Firebase function to create a PaymentIntent
-            interface CreatePaymentIntentData {
-                userId: string;
-                amount: number;
-            }
+            // Ensure the amount is passed within the 'data' property
+            const createPaymentIntent = httpsCallable<CreatePaymentIntentData,PaymentIntentResponse>(FIREBASE_FUNCTIONS, "createPaymentIntent");
+            const { data } = await createPaymentIntent({ data: amountNumber });
 
-            const createPaymentIntent = httpsCallable<CreatePaymentIntentData, PaymentIntentResponse>(FIREBASE_FUNCTIONS, 'createPaymentIntent');
-            const { data } = await createPaymentIntent({ userId: user.uid, amount: amount * 100 }); // Convert to cents
+            console.log("PaymentIntent data:", data);
 
-            console.log('PaymentIntent data:', data); // Log the data to see its structure
-
-            // Initialize PaymentSheet
             const { error } = await initPaymentSheet({
                 paymentIntentClientSecret: data.paymentIntent.clientSecret,
-                merchantDisplayName: 'All Square',
+                merchantDisplayName: "All Square",
             });
 
             if (error) {
-                console.error('Error initializing PaymentSheet:', error);
+                console.error("Error initializing PaymentSheet:", error);
                 return;
             }
 
-            // Present PaymentSheet
             const { error: presentError } = await presentPaymentSheet();
 
             if (presentError) {
-                console.error('Error presenting PaymentSheet:', presentError);
+                console.error("Error presenting PaymentSheet:", presentError);
             } else {
-                Alert.alert('Success', 'Your payment was successful!');
-                onSuccess(amount);
-                setAmount(0); // Reset the amount after successful payment
+                Alert.alert("Success", "Your payment was successful!");
+                onSuccess(amountNumber);
+                setAmount("");
             }
         } catch (e) {
-            console.error('Error in handleDeposit:', e);
-            Alert.alert('Error', 'An error occurred while processing your payment.');
+            console.error("Error in handleDeposit:", e);
+            Alert.alert(
+                "Error",
+                "An error occurred while processing your payment."
+            );
             onClose();
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -83,12 +98,19 @@ const DepositScreen: React.FC<DepositScreenProps> = ({ onClose, onSuccess }) => 
                 <Button title="Close" onPress={onClose} />
                 <TextInput
                     placeholder="Enter deposit amount"
-                    value={amount.toString()}
-                    onChangeText={(text) => setAmount(parseInt(text, 10))}
+                    value={amount}
+                    onChangeText={(text) => {
+                        const newText = text.replace(/[^0-9.]/g, '');
+                        const decimalCount = (newText.match(/\./g) || []).length;
+                        if (decimalCount <= 1) {
+                            setAmount(newText);
+                        }
+                    }}
                     keyboardType="numeric"
                     style={styles.input}
                 />
-                <Button title="Deposit" onPress={handleDeposit} />
+                <Button title="Deposit" onPress={handleDeposit} disabled={isLoading} />
+                {isLoading && <ActivityIndicator size="large" />}
             </View>
         </Modal>
     );
