@@ -1,7 +1,7 @@
 require("dotenv").config();
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const stripe = require("stripe")(process.env.STRIPE_RESTRICTED_KEY);
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 
 admin.initializeApp();

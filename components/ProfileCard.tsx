@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Avatar, Button, Card, TextInput } from 'react-native-paper';
-import { getAuth, updateProfile, User, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, updateProfile, User, signOut } from 'firebase/auth';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
+import { useStripe } from '@stripe/stripe-react-native';
 import DepositScreen from './DepositScreen';
 import { FIREBASE_APP } from '@/FirebaseConfig';
 
@@ -11,26 +13,20 @@ interface ProfileCardProps {
 }
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
-    const [currentUser, setCurrentUser] = useState<User | null>(null);
+    const currentUser = getAuth().currentUser; // Get the logged-in user
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
-    const [username, setUsername] = useState(currentUser?.displayName || '');
-    const [handicap, setHandicap] = useState(40);
-    const [homeCourse, setHomeCourse] = useState('');
-    const [isEditing, setIsEditing] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [username, setUsername] = useState(currentUser?.displayName || ''); // Initialize username
+    const [handicap, setHandicap] = useState(40); // Initialize handicap
+    const [homeCourse, setHomeCourse] = useState(''); // Initialize home course
+    const [isEditing, setIsEditing] = useState(false); // State to track edit mode
+    const [isLoading, setIsLoading] = useState(false); // State for loading indicator
     const [showDepositScreen, setShowDepositScreen] = useState(false);
     const [walletBalance, setWalletBalance] = useState(0);
 
     const auth = getAuth();
-    const db = getFirestore(FIREBASE_APP);
-
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setCurrentUser(user);
-        });
-        return () => unsubscribe();
-    }, [auth]);
+    const db = getFirestore(FIREBASE_APP); // Initialize Firestore
+    const functions = getFunctions(FIREBASE_APP, 'us-central1');
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -40,10 +36,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                     const userDocSnap = await getDoc(userDocRef);
 
                     if (userDocSnap.exists()) {
-                        const
-                            userData = userDocSnap.data();
-                        setFirstName(userData.firstName
-                            || '');
+                        const userData = userDocSnap.data();
+                        setFirstName(userData.firstName || '');
                         setLastName(userData.lastName || '');
                         setUsername(userData.username || currentUser.displayName || '');
                         setHandicap(userData.handicap || 40);
@@ -64,12 +58,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
         const fetchWalletBalance = async () => {
             if (currentUser) {
                 try {
+                    // Fetch the wallet balance from Firestore
                     const walletDocRef = doc(db, 'users', currentUser.uid);
                     const walletDocSnap = await getDoc(walletDocRef);
 
                     if (walletDocSnap.exists()) {
                         const walletData = walletDocSnap.data();
-                        setWalletBalance(walletData.walletBalance || 0);
+                        setWalletBalance(walletData.walletBalance || 0); // Accessing walletBalance
+                        console.log('Wallet balance fetched successfully!');
                     } else {
                         console.log('No such document!');
                     }
@@ -84,9 +80,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const saveProfile = async () => {
         setIsLoading(true);
         try {
+            const currentUser = getAuth().currentUser;
             if (currentUser) {
+                // Update the displayName in Firebase Authentication
                 await updateProfile(currentUser, { displayName: username });
 
+                // Update profile data in Firestore
                 await updateDoc(doc(db, 'users', currentUser.uid), {
                     firstName: firstName,
                     lastName: lastName,
@@ -102,8 +101,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
             }
         } catch (error) {
             console.error('Error updating profile:', error);
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
+    };
+
+    const handleDepositSuccess = (amount: number) => {
+        setWalletBalance(prevBalance => prevBalance + amount);
+        setShowDepositScreen(false);
     };
 
     const handleSignOut = async () => {
@@ -128,8 +133,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                             <ScrollView style={styles.scrollView}>
                                 <TextInput label="First Name" value={firstName} onChangeText={setFirstName} />
                                 <TextInput label="Last Name" value={lastName} onChangeText={setLastName} />
-                                <TextInput label="Username"
-                                    value={username} onChangeText={setUsername} />
+                                <TextInput label="Username" value={username} onChangeText={setUsername} />
                                 <TextInput
                                     label="Handicap"
                                     value={handicap.toString()}
@@ -145,16 +149,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                                     <Text style={styles.balance}>${walletBalance}</Text>
                                 </View>
                                 <View style={styles.fundContainer}>
-                                    <Button onPress={() => setShowDepositScreen(true)} style={styles.button}>
+                                    <Button onPress={() => setShowDepositScreen(true)} style={styles.button} mode="elevated">
                                         Deposit Funds
                                     </Button>
                                     {showDepositScreen && (
                                         <DepositScreen
                                             onClose={() => setShowDepositScreen(false)}
-                                            onSuccess={(amount) => {
-                                                setWalletBalance(prevBalance => prevBalance + amount);
-                                                console.log(`Successfully deposited ${amount} into wallet!`);
-                                            }}
+                                            onSuccess={handleDepositSuccess}
                                         />
                                     )}
                                 </View>
