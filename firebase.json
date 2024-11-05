@@ -5,7 +5,6 @@
       "runtime": "nodejs20", 
     "region": "us-central1",
     "memory": "512MB",
-    "timeoutSeconds": 60,
       "codebase": "default",
       "ignore": [
         "node_modules",
