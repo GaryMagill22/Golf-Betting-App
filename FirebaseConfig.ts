@@ -4,8 +4,10 @@ import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
+
+
 const firebaseConfig = {
-  apiKey: "AIzaSyAHRiKr-Q1rd9mVj9c7wtwo7zlvQZNREao",
+  apiKey: "AIzaSyBlxvlcTeZ4GVywmVbFdn6r1AWySEkgBco",
   authDomain: "reactnativegolfapp.firebaseapp.com",
   projectId: "reactnativegolfapp",
   storageBucket: "reactnativegolfapp.appspot.com",
@@ -18,9 +20,5 @@ export const FIREBASE_APP = initializeApp(firebaseConfig);
 export const FIREBASE_AUTH = initializeAuth(FIREBASE_APP, {
   persistence: getReactNativePersistence(ReactNativeAsyncStorage)
 });
-export const FIREBASE_FUNCTIONS = getFunctions(FIREBASE_APP);
-
-// Export a function to get the Firestore instance
-export const getFirestoreInstance = () => {
-  return getFirestore(FIREBASE_APP);
-};
+export const FIREBASE_DB = getFirestore(FIREBASE_APP);
+export const FIREBASE_FUNCTIONS = getFunctions(FIREBASE_APP, 'us-central1');

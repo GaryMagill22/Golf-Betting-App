@@ -1,19 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleProp, ViewProps, ViewStyle, ScrollView, Alert } from 'react-native';
-import { StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { Avatar, Button, Card, TextInput } from 'react-native-paper';
 import { getAuth, updateProfile, User, signOut } from 'firebase/auth';
-import { IconSource } from 'react-native-paper/lib/typescript/components/Icon';
-import { ThemeProp } from 'react-native-paper/lib/typescript/types';
-import CardTitle from 'react-native-paper/lib/typescript/components/Card/CardTitle';
-import { TouchableOpacity } from 'react-native-gesture-handler';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore'; // Import Firestore functions
-import { FIREBASE_APP, FIREBASE_FUNCTIONS } from '@/FirebaseConfig';
-import { httpsCallable } from 'firebase/functions';
+import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFunctions } from 'firebase/functions';
 import { useStripe } from '@stripe/stripe-react-native';
-
-
-
+import DepositScreen from './DepositScreen';
+import { FIREBASE_APP } from '@/FirebaseConfig';
 
 interface ProfileCardProps {
     user?: User | null;
@@ -28,36 +21,32 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const [homeCourse, setHomeCourse] = useState(''); // Initialize home course
     const [isEditing, setIsEditing] = useState(false); // State to track edit mode
     const [isLoading, setIsLoading] = useState(false); // State for loading indicator
+    const [showDepositScreen, setShowDepositScreen] = useState(false);
     const [walletBalance, setWalletBalance] = useState(0);
-
-    const stripe = useStripe();
-
 
     const auth = getAuth();
     const db = getFirestore(FIREBASE_APP); // Initialize Firestore
-
+    const functions = getFunctions(FIREBASE_APP, 'us-central1');
 
     useEffect(() => {
         const fetchUserData = async () => {
             if (currentUser) {
                 try {
-                    const userDocRef = doc(db, "users", currentUser.uid);
+                    const userDocRef = doc(db, 'users', currentUser.uid);
                     const userDocSnap = await getDoc(userDocRef);
 
                     if (userDocSnap.exists()) {
-                        const
-                            userData = userDocSnap.data();
-                        setFirstName(userData.firstName
-                            || '');
+                        const userData = userDocSnap.data();
+                        setFirstName(userData.firstName || '');
                         setLastName(userData.lastName || '');
                         setUsername(userData.username || currentUser.displayName || '');
                         setHandicap(userData.handicap || 40);
                         setHomeCourse(userData.homeCourse || '');
                     } else {
-                        console.log("No such document!");
+                        console.log('No such document!');
                     }
                 } catch (error) {
-                    console.error("Error fetching user data:", error);
+                    console.error('Error fetching user data:', error);
                 }
             }
         };
@@ -65,15 +54,12 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
         fetchUserData();
     }, [currentUser]);
 
-
-
-
     useEffect(() => {
         const fetchWalletBalance = async () => {
             if (currentUser) {
                 try {
                     // Fetch the wallet balance from Firestore
-                    const walletDocRef = doc(db, "users", currentUser.uid);
+                    const walletDocRef = doc(db, 'users', currentUser.uid);
                     const walletDocSnap = await getDoc(walletDocRef);
 
                     if (walletDocSnap.exists()) {
@@ -81,39 +67,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                         setWalletBalance(walletData.walletBalance || 0); // Accessing walletBalance
                         console.log('Wallet balance fetched successfully!');
                     } else {
-                        console.log("No such document!");
+                        console.log('No such document!');
                     }
                 } catch (error) {
-                    console.error("Error fetching wallet balance:", error);
+                    console.error('Error fetching wallet balance:', error);
                 }
             }
         };
         fetchWalletBalance();
     }, [currentUser]);
-
-
-    // const handleFundWallet = async () => {
-    //     try {
-    //         const fundWallet = httpsCallable(FIREBASE_FUNCTIONS, 'fundWallet');
-    //         const amountToFund = 1000; // Example: $10 (in cents)
-    //         const result = await fundWallet({ amount: amountToFund });
-
-    //         // Use the clientSecret returned from the fundWallet function
-    //         const { clientSecret } = result.data as { clientSecret: string };
-    //         const { error } = await stripe.confirmPayment(clientSecret); // Pass clientSecret as an object
-
-    //         if (error) {
-    //             console.error("Payment failed:", error);
-    //             Alert.alert('Payment Error', error.message);
-    //         } else {
-    //             // ... (rest of the code remains the same)
-    //         }
-    //     } catch (error) {
-    //         // ...
-    //     }
-    // };
-
-
 
     const saveProfile = async () => {
         setIsLoading(true);
@@ -123,8 +85,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                 // Update the displayName in Firebase Authentication
                 await updateProfile(currentUser, { displayName: username });
 
-                //  Update profile data in Firestore
-                await updateDoc(doc(db, "users", currentUser.uid), {
+                // Update profile data in Firestore
+                await updateDoc(doc(db, 'users', currentUser.uid), {
                     firstName: firstName,
                     lastName: lastName,
                     username: username,
@@ -144,73 +106,58 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
         }
     };
 
+    const handleDepositSuccess = (amount: number) => {
+        setWalletBalance(prevBalance => prevBalance + amount);
+        setShowDepositScreen(false);
+    };
+
     const handleSignOut = async () => {
         try {
             await signOut(auth);
-            // Navigate to the login screen or perform other actions after signing out
             console.log('User signed out successfully!');
         } catch (error: any) {
             console.error('Error signing out:', error);
-            // Handle the error, e.g., show an error message to the user
         }
     };
-
-
-
 
     return (
         <ScrollView>
             <View style={styles.container}>
                 <Card style={styles.card}>
                     <Avatar.Image style={styles.AvatarImage} size={80} source={require('../assets/images/avatar-circle.png')} />
-                    <Card.Title title={currentUser?.displayName || 'Unknown Username'} titleStyle={styles.cardTitle}
-                    />
+                    <Card.Title title={currentUser?.displayName || 'Unknown Username'} titleStyle={styles.cardTitle} />
                     <Text style={styles.profileText}>{currentUser?.email || 'Unknown Email'}</Text>
                     <Text style={styles.profileText}>Handicap: {handicap}</Text>
                     <Card.Content style={styles.cardContent}>
                         {isEditing ? (
                             <ScrollView style={styles.scrollView}>
-                                <TextInput
-                                    label="First Name"
-                                    value={firstName}
-                                    onChangeText={setFirstName}
-                                // placeholder="First Name"
-                                />
-                                <TextInput
-                                    label="Last Name"
-                                    value={lastName}
-                                    onChangeText={setLastName}
-                                // placeholder="Last Name"
-                                />
-                                <TextInput
-                                    label="Username"
-                                    value={username}
-                                    onChangeText={setUsername}
-                                // placeholder="Username"
-                                />
+                                <TextInput label="First Name" value={firstName} onChangeText={setFirstName} />
+                                <TextInput label="Last Name" value={lastName} onChangeText={setLastName} />
+                                <TextInput label="Username" value={username} onChangeText={setUsername} />
                                 <TextInput
                                     label="Handicap"
                                     value={handicap.toString()}
                                     onChangeText={(text) => setHandicap(Number(text))}
-                                    // placeholder="Enter Handicap"
                                     keyboardType="numeric"
                                 />
-                                <TextInput
-                                    label="Home Course"
-                                    value={homeCourse}
-                                    onChangeText={setHomeCourse}
-                                // placeholder="Enter Handicap"
-                                />
+                                <TextInput label="Home Course" value={homeCourse} onChangeText={setHomeCourse} />
                             </ScrollView>
                         ) : (
-                            <View >
+                            <View>
                                 <View style={styles.walletContainer}>
                                     <Text style={styles.title}>Wallet Balance: </Text>
                                     <Text style={styles.balance}>${walletBalance}</Text>
                                 </View>
-                                <View style={styles.fundContainer} >
-                                    <Button style={styles.button} mode="elevated"  >Deposit Funds</Button>
-                                    <Button style={styles.button} mode="elevated" >Withdraw Funds</Button>
+                                <View style={styles.fundContainer}>
+                                    <Button onPress={() => setShowDepositScreen(true)} style={styles.button} mode="elevated">
+                                        Deposit Funds
+                                    </Button>
+                                    {showDepositScreen && (
+                                        <DepositScreen
+                                            onClose={() => setShowDepositScreen(false)}
+                                            onSuccess={handleDepositSuccess}
+                                        />
+                                    )}
                                 </View>
                             </View>
                         )}
@@ -230,11 +177,11 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                         <Text>Sign Out</Text>
                     </Button>
                 </Card>
-
             </View>
         </ScrollView>
     );
 };
+
 export default ProfileCard;
 
 
@@ -333,6 +280,4 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
     },
-
 });
-

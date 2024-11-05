@@ -17,9 +17,8 @@ const ProfileScreen = () => {
 
 
   return (
-    <View>
+
       <ProfileCard user={user} />
-    </View>
   );
 };
 
