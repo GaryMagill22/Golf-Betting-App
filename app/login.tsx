@@ -9,8 +9,6 @@ import { useRouter } from 'expo-router';
 import { getFirestore, doc, setDoc, updateDoc } from 'firebase/firestore';
 
 
-
-
 const Page = () => {
 
   const { type } = useLocalSearchParams<{ type: string }>();

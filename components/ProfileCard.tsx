@@ -6,7 +6,7 @@ import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 import { useStripe } from '@stripe/stripe-react-native';
 import DepositScreen from './DepositScreen';
-import { FIREBASE_APP } from '@/FirebaseConfig';
+import { FIREBASE_APP, FIREBASE_DB } from '@/FirebaseConfig';
 import { httpsCallable } from 'firebase/functions';
 import { FIREBASE_FUNCTIONS } from '../FirebaseConfig';
 
@@ -32,44 +32,46 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
 
 
 
-    useEffect(() => {
-        const fetchUserData = async () => {
-            if (auth.currentUser) {
-                try {
-                    const getUserData = httpsCallable(FIREBASE_FUNCTIONS, 'getUserData');
-                    const { data } = await getUserData({}); // Call the function with an empty object
 
-                    // Assuming your function returns { userData: { /* user data */ } }
-                    const userData = (data as { userData: any }).userData;
-                        setFirstName(userData.firstName || '');
-                        setLastName(userData.lastName || '');
-                        setUsername(userData.username || (user ? user.displayName : '') || '');
-                        setHandicap(userData.handicap || 40);
-                        setHomeCourse(userData.homeCourse || '');
-                } catch (error) {
-                    console.error('Error fetching user data:', error);
-                }
-            }
-        };
+    // useEffect(() => {
+    //     const fetchUserData = async () => {
+    //         if (auth.currentUser) {
+    //             try {
+    //                 const getUserData = httpsCallable(FIREBASE_FUNCTIONS, 'getUserData');
+    //                 const { data } = await getUserData({}); // Call the function with an empty object
+    //                 console.log("User data:", data);
+    //                 // Assuming your function returns { userData: { /* user data */ } }
+    //                 const userData = (data as { userData: any }).userData;
+    //                     setFirstName(userData.firstName || '');
+    //                     setLastName(userData.lastName || '');
+    //                     setUsername(userData.username || (user ? user.displayName : '') || '');
+    //                     setHandicap(userData.handicap || 40);
+    //                     setHomeCourse(userData.homeCourse || '');
+    //             } catch (error) {
+    //                 console.error('Error fetching user data:', error);
+    //             }
+    //         }
+    //     };
 
-        fetchUserData();
-    }, [auth.currentUser]);
+    //     fetchUserData();
+    // }, [auth.currentUser]);
 
 
 
     // OLD WAY OF USING USEEFFECT WITH OWN FUNCTION
     useEffect(() => {
         const fetchUserData = async () => {
+            const currentUser = getAuth().currentUser;
             if (currentUser) {
                 try {
-                    const userDocRef = doc(db, 'users', currentUser.uid);
+                    const userDocRef = doc(FIREBASE_DB, 'users', currentUser.uid);
                     const userDocSnap = await getDoc(userDocRef);
-
+                    console.log("User Data:", currentUser.uid );
                     if (userDocSnap.exists()) {
                         const userData = userDocSnap.data();
                         setFirstName(userData.firstName || '');
                         setLastName(userData.lastName || '');
-                        setUsername(userData.username || currentUser.displayName || '');
+                        setUsername(userData.username || currentUser.uid || '');
                         setHandicap(userData.handicap || 40);
                         setHomeCourse(userData.homeCourse || '');
                     } else {
@@ -86,6 +88,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
 
     useEffect(() => {
         const fetchWalletBalance = async () => {
+            const currentUser = getAuth().currentUser;
             if (currentUser) {
                 try {
                     // Fetch the wallet balance from Firestore
