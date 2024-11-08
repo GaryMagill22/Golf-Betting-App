@@ -58,31 +58,31 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
 
 
     // OLD WAY OF USING USEEFFECT WITH OWN FUNCTION
-    // useEffect(() => {
-    //     const fetchUserData = async () => {
-    //         if (currentUser) {
-    //             try {
-    //                 const userDocRef = doc(db, 'users', currentUser.uid);
-    //                 const userDocSnap = await getDoc(userDocRef);
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (currentUser) {
+                try {
+                    const userDocRef = doc(db, 'users', currentUser.uid);
+                    const userDocSnap = await getDoc(userDocRef);
 
-    //                 if (userDocSnap.exists()) {
-    //                     const userData = userDocSnap.data();
-    //                     setFirstName(userData.firstName || '');
-    //                     setLastName(userData.lastName || '');
-    //                     setUsername(userData.username || currentUser.displayName || '');
-    //                     setHandicap(userData.handicap || 40);
-    //                     setHomeCourse(userData.homeCourse || '');
-    //                 } else {
-    //                     console.log('No such document!');
-    //                 }
-    //             } catch (error) {
-    //                 console.error('Error fetching user data:', error);
-    //             }
-    //         }
-    //     };
+                    if (userDocSnap.exists()) {
+                        const userData = userDocSnap.data();
+                        setFirstName(userData.firstName || '');
+                        setLastName(userData.lastName || '');
+                        setUsername(userData.username || currentUser.displayName || '');
+                        setHandicap(userData.handicap || 40);
+                        setHomeCourse(userData.homeCourse || '');
+                    } else {
+                        console.log('No such document!');
+                    }
+                } catch (error) {
+                    console.error('Error fetching user data:', error);
+                }
+            }
+        };
 
-    //     fetchUserData();
-    // }, [currentUser]);
+        fetchUserData();
+    }, [currentUser]);
 
     useEffect(() => {
         const fetchWalletBalance = async () => {
@@ -223,6 +223,7 @@ const styles = StyleSheet.create({
     card: {
         marginVertical: 10,
         height: 600,
+        width: 350,
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 15,
