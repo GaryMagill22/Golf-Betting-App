@@ -145,9 +145,10 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     };
 
     const handleSignOut = async () => {
+        const currentUser = getAuth().currentUser;
         try {
             await signOut(auth);
-            console.log('User signed out successfully!');
+            console.log(`User ${currentUser?.email || currentUser?.uid} signed out successfully!`);
         } catch (error: any) {
             console.error('Error signing out:', error);
         }

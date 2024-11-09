@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image, TextInput, TouchableOpacity, Alert } from 'react-native'
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image, TextInput, TouchableOpacity, Alert, Button } from 'react-native'
 import React, { useState } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import { defaultStyles } from '../constants/Styles'
@@ -114,7 +114,7 @@ const Page = () => {
           <ActivityIndicator size='large' color='#fff' />
         </View>
       )}
-      {/* <Image style={styles.logo} source={require('../assets/images/logo-white.png')} /> */}
+      <Image style={styles.logo} source={require('../assets/images/All-Square-Logo.png')} />
 
       <Text style={styles.title}>
         {type === 'login' ? 'Welcome back' : 'Create your account'}
@@ -147,6 +147,8 @@ const Page = () => {
           <Text style={styles.btnPrimaryText}>Create Account</Text>
         </TouchableOpacity>
       )}
+      <Button title="back" onPress={() => router.back()}/>
+      
 
     </KeyboardAvoidingView>
   )
@@ -158,8 +160,8 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   logo: {
-    width: 60,
-    height: 60,
+    width: 300,
+    height: 150,
     alignSelf: 'center',
     marginVertical: 80,
   },
