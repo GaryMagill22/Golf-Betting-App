@@ -66,7 +66,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
                 try {
                     const userDocRef = doc(FIREBASE_DB, 'users', currentUser.uid);
                     const userDocSnap = await getDoc(userDocRef);
-                    console.log("User Data:", currentUser.uid );
+                    console.log("Current User Id:", currentUser.uid );
                     if (userDocSnap.exists()) {
                         const userData = userDocSnap.data();
                         setFirstName(userData.firstName || '');
