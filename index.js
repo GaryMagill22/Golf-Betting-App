@@ -4,6 +4,7 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './context/AuthContext';
 
+
 import App from './App';
 
 // registerRootComponent calls AppRegistry.registerComponent('main', () => App);
@@ -14,13 +15,14 @@ const publishableKey = "pk_test_51QAvfOLZgHn4BjmwLz4sfVoidoK8lNugRUXxIvKkEc9fa8V
 
 registerRootComponent(() => (
     <SafeAreaProvider>
-        <StripeProvider publishableKey={publishableKey} 
-        urlScheme="myapp" 
-        merchantIdentifier="your_merchant_identifier" 
-        >
-            <AuthProvider>
+        <AuthProvider>
+            <StripeProvider
+                publishableKey={publishableKey}
+                urlScheme="myapp"
+                merchantIdentifier="your_merchant_identifier"
+            >
                 <App />
-            </AuthProvider>
-        </StripeProvider>
+            </StripeProvider>
+        </AuthProvider>
     </SafeAreaProvider>
 ));

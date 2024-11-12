@@ -2,19 +2,25 @@ require("dotenv").config();
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const useContext = require("./context/AuthContext");
 
 
 admin.initializeApp();
 const db = admin.firestore();
 
 const getUserData = functions.https.onCall(async (data, context) => {
-  const userId = context.auth.uid;
-
-  if (!userId) {
-    throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
-  }
+  console.log("Complete context object: ", context);
+  console.log("context.auth: ", context.auth);
 
   try {
+    // Get the user ID from the context
+    const userId = context.auth.uid;
+
+    // Check if the user ID is available
+    if (!userId) {
+      throw new functions.https.HttpsError("unauthenticated", "User is not authenticated");
+    }
+
     const userDocRef = db.collection("users").doc(userId);
     const userDoc = await userDocRef.get();
 
@@ -24,14 +30,73 @@ const getUserData = functions.https.onCall(async (data, context) => {
 
     const userData = userDoc.data();
     console.log("User data fetched successfully: ", userData);
-    return {userData};
+    return userData;
   } catch (error) {
     console.error("Error fetching user data:", error);
+    if (error.code === "auth/user-not-found") {
+      throw new functions.https.HttpsError("not-found", "User not found.");
+    }
     throw new functions.https.HttpsError("internal", "Unable to fetch user data");
   }
 });
 
-exports.getUserData = getUserData;
+module.exports = {
+  getUserData
+};
+
+// const getUserData = functions.https.onCall(async (data, context) => {
+//   console.log("Complete context object: ", context);
+//   console.log("context.auth: ", context.auth);
+//   try {
+//     // Get the authenticated user
+//     const user = await admin.auth().getUser(context.auth.uid);
+//     const userId = user.uid; // Get the user's ID
+
+//     const userDocRef = db.collection("users").doc(userId);
+//     const userDoc = await userDocRef.get();
+
+//     if (!userDoc.exists) {
+//       throw new functions.https.HttpsError("not-found", "User document not found.");
+//     }
+
+//     const userData = userDoc.data();
+//     console.log("User data fetched successfully: ", userData);
+//     return userData;
+//   } catch (error) {
+//     console.error("Error fetching user data:", error);
+//     if (error.code === "auth/user-not-found") {
+//       throw new functions.https.HttpsError("not-found", "User not found.");
+//     }
+//     throw new functions.https.HttpsError("internal", "Unable to fetch user data");
+//   }
+// });
+
+
+// const getUserData = functions.https.onCall(async (data, context) => {
+//   const userId = context.auth.uid;
+
+//   if (!userId) {
+//     throw new functions.https.HttpsError("unauthenticated", "The function must be called while authenticated.");
+//   }
+
+//   try {
+//     const userDocRef = db.collection("users").doc(userId);
+//     const userDoc = await userDocRef.get();
+
+//     if (!userDoc.exists) {
+//       throw new functions.https.HttpsError("not-found", "User document not found.");
+//     }
+
+//     const userData = userDoc.data();
+//     console.log("User data fetched successfully: ", userData);
+//     return {userData};
+//   } catch (error) {
+//     console.error("Error fetching user data:", error);
+//     throw new functions.https.HttpsError("internal", "Unable to fetch user data");
+//   }
+// });
+
+// exports.getUserData = getUserData;
 
 exports.createPaymentIntent = functions.https.onCall(async (data, context) => {
   // Access the amount from data.body.data

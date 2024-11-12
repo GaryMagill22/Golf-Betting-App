@@ -9,12 +9,11 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/components/useColorScheme';
 import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-// import AuthProvider from '@/context/AuthContext';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { FIREBASE_AUTH, FIREBASE_APP, FIREBASE_DB } from '@/FirebaseConfig'; // Import your Firebase config
-import { onAuthStateChanged, getAuth, User } from 'firebase/auth';
-
-
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { fetchUserData } from '@/components/ProfileCard';
+import { AuthProvider } from '@/context/AuthContext';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -35,7 +34,6 @@ export default function RootLayout() {
     ...FontAwesome.font,
   });
 
-
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
     if (error) throw error;
@@ -52,10 +50,8 @@ export default function RootLayout() {
   }
 
   return (
-    // <AuthProvider>
     <RootLayoutNav />
-    /* </AuthProvider> */
-  )
+  );
 }
 
 function RootLayoutNav() {
@@ -71,19 +67,17 @@ function RootLayoutNav() {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         console.log('User is signed in:', user.uid); // Log user UID when signed in
+        fetchUserData(user);
       } else {
         console.log('User is signed out.'); // Log when signed out
       }
 
       setUser(user);
-      if (initializing) {
-        setInitializing(false);
-      }
+      setInitializing(false);
     });
 
     return () => unsubscribe();
   }, []);
-
 
   useEffect(() => {
     if (initializing) return;
@@ -96,31 +90,26 @@ function RootLayoutNav() {
   }, [user, initializing]);
 
   return (
-    <StripeProvider
-      publishableKey="pk_test_51QAvfOLZgHn4BjmwLz4sfVoidoK8lNugRUXxIvKkEc9fa8VuhV3Z7IJqwqtHpAHNvVKC6Erbzq7ZH1PGecSjzkUi00CqulYlUD"
-      merchantIdentifier=""
-    >
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack>
-          <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen
-            name="modal"
-            options={{
-              presentation: 'modal',
-              title: '',
-              headerTitleStyle: {
-                fontFamily: 'mon-sb',
-              },
-              headerLeft: () => (
-                <TouchableOpacity onPress={() => router.back()}>
-                  <Ionicons name="close-outline" size={28} />
-                </TouchableOpacity>
-              ),
-            }}
-          />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        </Stack>
-      </ThemeProvider>
-    </StripeProvider>
+    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="modal"
+          options={{
+            presentation: 'modal',
+            title: '',
+            headerTitleStyle: {
+              fontFamily: 'mon-sb',
+            },
+            headerLeft: () => (
+              <TouchableOpacity onPress={() => router.back()}>
+                <Ionicons name="close-outline" size={28} />
+              </TouchableOpacity>
+            ),
+          }}
+        />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      </Stack>
+    </ThemeProvider>
   );
 }

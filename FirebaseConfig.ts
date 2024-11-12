@@ -5,7 +5,6 @@ import { getFunctions } from "firebase/functions";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
 
-
 const firebaseConfig = {
   apiKey: "AIzaSyBlxvlcTeZ4GVywmVbFdn6r1AWySEkgBco",
   authDomain: "reactnativegolfapp.firebaseapp.com",
