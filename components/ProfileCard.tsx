@@ -6,11 +6,9 @@ import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 import { useStripe } from '@stripe/stripe-react-native';
 import DepositScreen from './DepositScreen';
-import { FIREBASE_APP, FIREBASE_DB } from '@/FirebaseConfig';
+import FIREBASE_APP, { fetchUserData, FIREBASE_AUTH, FIREBASE_DB, FIREBASE_FUNCTIONS } from '@/FirebaseConfig';
 import { httpsCallable } from 'firebase/functions';
-import { FIREBASE_FUNCTIONS } from '../FirebaseConfig';
 import firebase from 'firebase/app';
-import 'firebase/auth';
 import 'firebase/functions';
 
 
@@ -19,21 +17,23 @@ interface ProfileCardProps {
     user?: User | null;
 }
 
-export const fetchUserData = async (user: User | null) => {
-    try {
-        const getUserData = httpsCallable(FIREBASE_FUNCTIONS, 'getUserData');
 
-        // Pass the user's ID token as an argument
-        const idToken = await user?.getIdToken();
-        const { data } = await getUserData({ idToken });
 
-        console.log("User data:", data);
-        const userData = (data as { userData: any }).userData;
-        // ... (set state variables with userData) 
-    } catch (error) {
-        console.error('Error fetching user data:', error);
-    }
-};
+// export const fetchUserData = async (user: User | null) => {
+//     try {
+//         const getUserData = httpsCallable(FIREBASE_FUNCTIONS, 'getUserData');
+
+//         // Pass the user's ID token as an argument
+//         const idToken = await user?.getIdToken();
+//         const { data } = await getUserData({ idToken });
+
+//         console.log("User data:", data);
+//         const userData = (data as { userData: any }).userData;
+//         // ... (set state variables with userData) 
+//     } catch (error) {
+//         console.error('Error fetching user data:', error);
+//     }
+// };
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const currentUser = getAuth().currentUser; // Get the logged-in user

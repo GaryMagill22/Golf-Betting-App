@@ -4,7 +4,7 @@ import { FIREBASE_FUNCTIONS } from '../FirebaseConfig';
 import { useStripe } from '@stripe/stripe-react-native';
 import React, { useState } from 'react';
 import { Alert, View, TextInput, Button, Modal, StyleSheet, ActivityIndicator } from 'react-native';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context';
 
 interface CreatePaymentIntentData {
     data: number;

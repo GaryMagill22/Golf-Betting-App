@@ -1,7 +1,7 @@
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments, Slot } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
@@ -10,10 +10,8 @@ import { useColorScheme } from '@/components/useColorScheme';
 import { TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { StripeProvider } from '@stripe/stripe-react-native';
-import { FIREBASE_AUTH, FIREBASE_APP, FIREBASE_DB } from '@/FirebaseConfig'; // Import your Firebase config
+import FIREBASE_APP, { FIREBASE_AUTH, FIREBASE_DB, FIREBASE_FUNCTIONS, fetchUserData } from '@/FirebaseConfig'; 
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { fetchUserData } from '@/components/ProfileCard';
-import { AuthProvider } from '@/context/AuthContext';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -56,18 +54,16 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const segments = useSegments();
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(null as User | null);
   const [initializing, setInitializing] = useState(true);
 
-  const auth = FIREBASE_AUTH;
   const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(FIREBASE_AUTH, (user) => {
       if (user) {
         console.log('User is signed in:', user.uid); // Log user UID when signed in
-        fetchUserData(user);
+        fetchUserData();
       } else {
         console.log('User is signed out.'); // Log when signed out
       }
@@ -83,11 +79,13 @@ function RootLayoutNav() {
     if (initializing) return;
 
     if (user) {
-      router.replace('/(tabs)/home'); // Redirect to profile if authenticated
+      router.replace('/(tabs)/profile'); // Redirect to profile if authenticated
     } else {
       router.replace('/'); // Redirect to login if not authenticated
     }
   }, [user, initializing]);
+
+  
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>

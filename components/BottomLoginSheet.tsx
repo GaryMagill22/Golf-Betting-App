@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import {ColorPalette} from '@/constants/Colors'
 import { Link } from 'expo-router'
 
+
 const BottomLoginSheet = () => {
 
   const { bottom }  = useSafeAreaInsets();

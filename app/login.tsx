@@ -2,14 +2,14 @@ import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicat
 import React, { useState } from 'react'
 import { useLocalSearchParams } from 'expo-router'
 import { defaultStyles } from '../constants/Styles'
-import { FIREBASE_AUTH, FIREBASE_APP, FIREBASE_FUNCTIONS, FIREBASE_DB } from '../FirebaseConfig';
+import FIREBASE_APP, { FIREBASE_FUNCTIONS, FIREBASE_DB, FIREBASE_AUTH } from '../FirebaseConfig';
 import { httpsCallable } from 'firebase/functions'; // Import httpsCallable
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, deleteUser } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, deleteUser, getAuth } from 'firebase/auth';
 import { useRouter } from 'expo-router';
 import { getFirestore, doc, setDoc, updateDoc } from 'firebase/firestore';
 
 
-const Page = () => {
+const Login = () => {
 
   const { type } = useLocalSearchParams<{ type: string }>();
   const [loading, setLoading] = useState(false);
@@ -17,13 +17,12 @@ const Page = () => {
   const [password, setPassword] = useState('');
 
 
-  const auth = FIREBASE_AUTH;
 
   const db = getFirestore(FIREBASE_APP);
 
 
   const router = useRouter();
-
+  const auth = getAuth();
 
 
   const signIn = async () => {
@@ -189,4 +188,4 @@ const styles = StyleSheet.create({
   }
 })
 
-export default Page;
+export default Login;

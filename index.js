@@ -2,7 +2,7 @@ import { registerRootComponent } from 'expo';
 import React from 'react';
 import { StripeProvider } from '@stripe/stripe-react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider } from './context';
 
 
 import App from './App';

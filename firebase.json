@@ -2,9 +2,9 @@
   "functions": [
     {
       "source": "functions",
-      "runtime": "nodejs20", 
-    "region": "us-central1",
-    "memory": "512MB",
+      "runtime": "nodejs20",
+      "region": "us-central1",
+      "memory": "512MB",
       "codebase": "default",
       "ignore": [
         "node_modules",
@@ -22,9 +22,28 @@
     "functions": {
       "port": 5001
     },
+    "firestore": {
+      "port": 8080
+    },
+    "auth": {
+      "port": 9099
+    },
     "ui": {
       "enabled": true
     },
-    "singleProjectMode": true
+    "singleProjectMode": true,
+    "database": {
+      "port": 9000
+    },
+    "storage": {
+      "port": 9199
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }
