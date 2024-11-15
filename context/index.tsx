@@ -68,7 +68,7 @@ interface AuthContextType {
  * Authentication context instance
  * @type {React.Context<AuthContextType>}
  */
-const AuthContext = createContext<AuthContextType>({} as AuthContextType);
+export const AuthContext = createContext<AuthContextType>({} as AuthContextType);
 
 // ============================================================================
 // Hook
@@ -208,3 +208,5 @@ export function SessionProvider(props: { children: React.ReactNode }) {
         </AuthContext.Provider>
     );
 }
+
+

@@ -32,7 +32,7 @@ const Login = () => {
       const user = userCredential.user;
 
       if (user) {
-        router.replace('/home');
+        router.replace('/profile');
       }
     } catch (error: any) {
       console.log(error);

@@ -5,6 +5,7 @@ import { getFunctions } from "firebase/functions";
 import { httpsCallable } from "firebase/functions";
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
+
 const firebaseConfig = {
   apiKey: "AIzaSyBlxvlcTeZ4GVywmVbFdn6r1AWySEkgBco",
   authDomain: "reactnativegolfapp.firebaseapp.com",
@@ -29,18 +30,25 @@ export default FIREBASE_APP;
 
 const auth = getAuth();
 
-// Get UserData from firebase function getUserData
-export const fetchUserData = async () => {
 
+interface UserData {
+  firstName: string;
+  lastName: string;
+  username: string;
+  handicap: number;
+  homeCourse: string;
+  walletBalance: number;
+}
+
+export const fetchUserData = async (): Promise<UserData | undefined> => {
   const getUserData = httpsCallable(FIREBASE_FUNCTIONS, 'getUserData');
 
   try {
-    const result = await getUserData(); 
+    const result = await getUserData();
     console.log("User data:", result.data);
-    // ... use result.data to update your component's state
+    return result.data as UserData;
   } catch (error) {
     console.error("Error fetching user data:", error);
+    return undefined;
   }
 };
-
-

@@ -10,30 +10,14 @@ import FIREBASE_APP, { fetchUserData, FIREBASE_AUTH, FIREBASE_DB, FIREBASE_FUNCT
 import { httpsCallable } from 'firebase/functions';
 import firebase from 'firebase/app';
 import 'firebase/functions';
+import { AuthContext } from '@/context/index'
+
 
 
 
 interface ProfileCardProps {
     user?: User | null;
 }
-
-
-
-// export const fetchUserData = async (user: User | null) => {
-//     try {
-//         const getUserData = httpsCallable(FIREBASE_FUNCTIONS, 'getUserData');
-
-//         // Pass the user's ID token as an argument
-//         const idToken = await user?.getIdToken();
-//         const { data } = await getUserData({ idToken });
-
-//         console.log("User data:", data);
-//         const userData = (data as { userData: any }).userData;
-//         // ... (set state variables with userData) 
-//     } catch (error) {
-//         console.error('Error fetching user data:', error);
-//     }
-// };
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const currentUser = getAuth().currentUser; // Get the logged-in user
@@ -51,51 +35,25 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ user }) => {
     const db = getFirestore(FIREBASE_APP); // Initialize Firestore
     const functions = getFunctions(FIREBASE_APP, 'us-central1');
 
+    useEffect(() => {
+        const loadUserData = async () => {
+            try {
+                const userData = await fetchUserData(); // Call the exported function
+                if (userData) {
+                    setFirstName(userData.firstName || "");
+                    setLastName(userData.lastName || "");
+                    setUsername(userData.username || user?.displayName || "");
+                    setHandicap(userData.handicap || 40);
+                    setHomeCourse(userData.homeCourse || "");
+                }
+            } catch (error) {
+                console.error("Error loading user data:", error);
+                // Handle the error, e.g., show an error message
+            }
+        };
 
-    // export const fetchUserData = async () => {
-    //     try {
-    //         const getUserData = httpsCallable(FIREBASE_FUNCTIONS, 'getUserData');
-    //         const { data } = await getUserData({});
-    //         console.log("User data:", data);
-    //         const userData = (data as { userData: any }).userData;
-    //         setFirstName(userData.firstName || '');
-    //         setLastName(userData.lastName || '');
-    //         setUsername(userData.username || (user ? user.displayName : '') || '');
-    //         setHandicap(userData.handicap || 40);
-    //         setHomeCourse(userData.homeCourse || '');
-    //     } catch (error) {
-    //         console.error('Error fetching user data:', error);
-    //     }
-    // };
-
-    // useEffect(() => {
-    //     const fetchUserData = async () => {
-    //         if (currentUser) {
-    //             try {
-    //                 const userDocRef = doc(db, 'users', currentUser.uid);
-    //                 const userDocSnap = await getDoc(userDocRef);
-
-    //                 if (userDocSnap.exists()) {
-    //                     const userData = userDocSnap.data();
-    //                     setFirstName(userData.firstName || '');
-    //                     setLastName(userData.lastName || '');
-    //                     setUsername(userData.username || currentUser.displayName || '');
-    //                     setHandicap(userData.handicap || 40);
-    //                     setHomeCourse(userData.homeCourse || '');
-    //                 } else {
-    //                     console.log('No such document!');
-    //                 }
-    //             } catch (error) {
-    //                 console.error('Error fetching user data:', error);
-    //             }
-    //         }
-    //     };
-
-    //     fetchUserData();
-    // }, [currentUser]);
-
-
-
+        loadUserData();
+    }, []);
 
 
     useEffect(() => {

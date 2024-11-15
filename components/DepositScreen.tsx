@@ -1,10 +1,11 @@
 import { httpsCallable } from 'firebase/functions';
-
 import { FIREBASE_FUNCTIONS } from '../FirebaseConfig';
 import { useStripe } from '@stripe/stripe-react-native';
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Alert, View, TextInput, Button, Modal, StyleSheet, ActivityIndicator } from 'react-native';
-import { useAuth } from '../context';
+import { AuthContext } from '@/context/index'
+import { getAuth } from 'firebase/auth';
+
 
 interface CreatePaymentIntentData {
     data: number;
@@ -23,22 +24,28 @@ interface DepositScreenProps {
 const DepositScreen: React.FC<DepositScreenProps> = ({ onClose, onSuccess }) => {
     const { initPaymentSheet, presentPaymentSheet } = useStripe();
     const [amount, setAmount] = useState("");
-    const { user, loading } = useAuth();
+    const { user } = useContext(AuthContext);
     const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        console.log("User in DepositScreen:", user); // Log the user object
+        console.log("Is loading:", isLoading); // Log the loading state
+    }, [user, isLoading]);
+
 
     const handleDeposit = async () => {
         console.log("handleDeposit called");
-
-        if (loading) {
-            console.log("Auth state is still loading");
-            return;
-        }
 
         if (!user) {
             Alert.alert("Error", "You must be logged in to make a deposit.");
             onClose();
             return;
         }
+        if (isLoading) {
+            console.log("Auth state is still loading");
+            return;
+        }
+
 
         // Validate amount
         const amountNumber = parseFloat(amount);
@@ -56,7 +63,7 @@ const DepositScreen: React.FC<DepositScreenProps> = ({ onClose, onSuccess }) => 
             );
 
             // Ensure the amount is passed within the 'data' property
-            const createPaymentIntent = httpsCallable<CreatePaymentIntentData,PaymentIntentResponse>(FIREBASE_FUNCTIONS, "createPaymentIntent");
+            const createPaymentIntent = httpsCallable<CreatePaymentIntentData, PaymentIntentResponse>(FIREBASE_FUNCTIONS, "createPaymentIntent");
             const { data } = await createPaymentIntent({ data: amountNumber });
 
             console.log("PaymentIntent data:", data);
@@ -134,3 +141,4 @@ const styles = StyleSheet.create({
 });
 
 export default DepositScreen;
+
